@@ -1,0 +1,26 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2019 Privategrity Corporation                                   /
+//                                                                             /
+// All rights reserved.                                                        /
+////////////////////////////////////////////////////////////////////////////////
+
+syntax = "proto3";
+option go_package = "git.xx.network/elixxir/messages";
+
+package messages;
+
+service Commitments {
+    rpc Verify (Commitment) returns (Ack) {
+    }
+}
+
+message Ack {
+    string Error = 1;
+}
+
+message Commitment {
+    bytes PrivateKey = 1;
+    bytes IDF = 2;
+    string Wallet = 3;
+    bytes Signature = 4;
+}
