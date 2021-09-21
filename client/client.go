@@ -14,6 +14,7 @@ import (
 	"gitlab.com/xx_network/primitives/id/idf"
 )
 
+// SignAndTransmit creates a Client object & transmits commitment info to the server
 func SignAndTransmit(pk, cert, idfBytes []byte, wallet string) error {
 	idfStruct := &idf.IdFile{}
 	err := json.Unmarshal(idfBytes, idfStruct)
