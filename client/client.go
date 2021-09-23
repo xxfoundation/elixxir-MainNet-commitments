@@ -15,7 +15,7 @@ import (
 )
 
 // SignAndTransmit creates a Client object & transmits commitment info to the server
-func SignAndTransmit(pk, cert, idfBytes []byte, wallet string) error {
+func SignAndTransmit(pk, cert, idfBytes, commitmentCert []byte, wallet, address string) error {
 	idfStruct := &idf.IdFile{}
 	err := json.Unmarshal(idfBytes, idfStruct)
 	if err != nil {
@@ -26,7 +26,7 @@ func SignAndTransmit(pk, cert, idfBytes []byte, wallet string) error {
 		return errors.WithMessage(err, "Failed to unmarshal ID from IDF")
 	}
 
-	h, err := connect.NewHost(nil, "0.0.0.0", cert, connect.GetDefaultHostParams())
+	h, err := connect.NewHost(nil, address, commitmentCert, connect.GetDefaultHostParams())
 	if err != nil {
 		return err
 	}

@@ -89,3 +89,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Ac
 	})
 	return &messages.Ack{}, nil
 }
+
+func (i *Impl) Stop() {
+	i.pc.Shutdown()
+}
