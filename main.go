@@ -1,11 +1,7 @@
-// +build js
-// +build wasm
-
-package mainnet_commitments
+package main
 
 import (
 	"git.xx.network/elixxir/mainnet-commitments/client"
-	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/utils"
 	"syscall/js"
 )
@@ -35,45 +31,45 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	if ep, err = utils.ExpandPath(certPath); err == nil {
 		cert, err = utils.ReadFile(ep)
 		if err != nil {
-			jww.FATAL.Panicf("Failed to read cert file at path %s: %+v", ep, err)
+			return map[string]interface{}{"Error": err.Error()}
 		}
 	} else {
-		jww.FATAL.Panicf("Failed to expand certificate path: %+v", err)
+		return map[string]interface{}{"Error": err.Error()}
 	}
 
 	// Read key file
 	if ep, err = utils.ExpandPath(keyPath); err == nil {
 		key, err = utils.ReadFile(ep)
 		if err != nil {
-			jww.FATAL.Panicf("Failed to read key file at path %s: %+v", ep, err)
+			return map[string]interface{}{"Error": err.Error()}
 		}
 	} else {
-		jww.FATAL.Panicf("Failed to expand key path: %+v", err)
+		return map[string]interface{}{"Error": err.Error()}
 	}
 
 	// Read id file
 	if ep, err = utils.ExpandPath(idfPath); err == nil {
 		idf, err = utils.ReadFile(ep)
 		if err != nil {
-			jww.FATAL.Panicf("Failed to read id file at path %s: %+v", ep, err)
+			return map[string]interface{}{"Error": err.Error()}
 		}
 	} else {
-		jww.FATAL.Panicf("Failed to expand id path: %+v", err)
+		return map[string]interface{}{"Error": err.Error()}
 	}
 
 	if ep, err = utils.ExpandPath(commitmentsCertPath); err == nil {
 		commitmentCert, err = utils.ReadFile(ep)
 		if err != nil {
-			jww.FATAL.Panicf("Failed to read commitments cert file at path %s: %+v", ep, err)
+			return map[string]interface{}{"Error": err.Error()}
 		}
 	} else {
-		jww.FATAL.Panicf("Failed to expand commitments certificate path: %+v", err)
+		return map[string]interface{}{"Error": err.Error()}
 	}
 
 	// Sign & transmit information
 	err = client.SignAndTransmit(key, cert, idf, commitmentCert, wallet, address)
 	if err != nil {
-		jww.FATAL.Panicf("Failed to sign & transmit node info: %+v", err)
+		return map[string]interface{}{"Error": err.Error()}
 	}
-	return nil
+	return map[string]interface{}{}
 }

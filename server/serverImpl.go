@@ -44,7 +44,7 @@ type Impl struct {
 }
 
 // Verify func is the main endpoint for the mainnet-commitments server
-func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Ack, error) {
+func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.CommitmentResponse, error) {
 	// Load IDF from JSON bytes
 	idfStruct := &idf.IdFile{}
 	err := json.Unmarshal(msg.IDF, idfStruct)
@@ -87,7 +87,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Ac
 		Wallet:    msg.Wallet,
 		Signature: msg.Signature,
 	})
-	return &messages.Ack{}, nil
+	return &messages.CommitmentResponse{}, nil
 }
 
 func (i *Impl) Stop() {

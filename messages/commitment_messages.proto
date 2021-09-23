@@ -10,11 +10,11 @@ option go_package = "git.xx.network/elixxir/messages";
 package messages;
 
 service Commitments {
-    rpc Verify (Commitment) returns (Ack) {
+    rpc Verify (Commitment) returns (CommitmentResponse) {
     }
 }
 
-message Ack {
+message CommitmentResponse {
     string Error = 1;
 }
 
