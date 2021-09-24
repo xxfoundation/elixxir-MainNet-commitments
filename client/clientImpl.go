@@ -10,6 +10,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+type Sender interface {
+	SignAndTransmit(host *connect.Host, message *messages.Commitment) error
+}
+
 // Client struct implements the GRPC client call to mainnet-commitments servers
 type Client struct {
 	pc *connect.ProtoComms

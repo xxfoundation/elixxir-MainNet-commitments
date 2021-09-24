@@ -12,6 +12,7 @@ import (
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
+	"testing"
 )
 
 // Params struct holds data needed to create a server Impl
@@ -92,4 +93,15 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 
 func (i *Impl) Stop() {
 	i.pc.Shutdown()
+}
+
+func (i *Impl) GetStorage() *storage.Storage {
+	return i.s
+}
+
+func (i *Impl) SetStorage(t *testing.T, s *storage.Storage) {
+	if t == nil {
+		panic("Cannot set storage on impl outside of testing")
+	}
+	i.s = s
 }

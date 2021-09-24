@@ -1,7 +1,67 @@
 package client
 
-import "testing"
+import (
+	"encoding/json"
+	"git.xx.network/elixxir/mainnet-commitments/messages"
+	"git.xx.network/elixxir/mainnet-commitments/server"
+	"git.xx.network/elixxir/mainnet-commitments/storage"
+	"gitlab.com/xx_network/comms/connect"
+	"gitlab.com/xx_network/crypto/csprng"
+	"gitlab.com/xx_network/crypto/signature/rsa"
+	"gitlab.com/xx_network/primitives/id"
+	"gitlab.com/xx_network/primitives/id/idf"
+	"testing"
+)
+
+type MockSender struct {
+	t        *testing.T
+	id, cert []byte
+}
+
+func (ms *MockSender) SignAndTransmit(host *connect.Host, message *messages.Commitment) error {
+	s, err := storage.NewStorage(storage.Params{})
+	if err != nil {
+		ms.t.Error("Failed to init storage for mock server")
+	}
+	err = s.InsertMembers([]storage.Member{{
+		Id:   ms.id,
+		Cert: ms.cert,
+	},
+	})
+	if err != nil {
+		ms.t.Errorf("Failed to insert members: %+v", err)
+	}
+	impl := server.Impl{}
+	impl.SetStorage(ms.t, s)
+	_, err = impl.Verify(nil, message)
+	if err != nil {
+		ms.t.Errorf("Failed to verify: %+v", err)
+	}
+	return nil
+}
 
 func TestSignAndTransmit(t *testing.T) {
+	pk, err := rsa.GenerateKey(csprng.NewSystemRNG(), 2048)
+	if err != nil {
+		t.Errorf("Failed to gen key: %+v", err)
+	}
+	nid := id.NewIdFromString("zezima", id.Node, t)
+	idb := [33]byte{}
+	copy(idb[:], nid.Marshal())
+	idFile := idf.IdFile{
+		ID:        nid.String(),
+		Type:      nid.GetType().String(),
+		Salt:      [32]byte{},
+		IdBytes:   idb,
+		HexNodeID: nid.HexEncode(),
+	}
+	idfBytes, err := json.Marshal(idFile)
+	if err != nil {
+		t.Errorf("Failed to marshal IDF: %+v", err)
+	}
 
+	err = SignAndTransmit(rsa.CreatePrivateKeyPem(pk), idfBytes, "wallet", nil, &MockSender{t, nid.Bytes(), rsa.CreatePublicKeyPem(pk.GetPublic())})
+	if err != nil {
+		t.Errorf("Failed to sign & transmit: %+v", err)
+	}
 }

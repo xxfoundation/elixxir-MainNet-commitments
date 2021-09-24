@@ -4,7 +4,11 @@
 package main
 
 import (
+	"encoding/json"
 	"git.xx.network/elixxir/mainnet-commitments/client"
+	"gitlab.com/xx_network/comms/connect"
+	"gitlab.com/xx_network/primitives/id"
+	"gitlab.com/xx_network/primitives/id/idf"
 	"gitlab.com/xx_network/primitives/utils"
 	"syscall/js"
 )
@@ -27,7 +31,7 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	wallet := inputs[4].String()
 	address := inputs[5].String()
 
-	var cert, key, idf, commitmentCert []byte
+	var cert, key, idfBytes, commitmentCert []byte
 	var err error
 	var ep string
 	// Read certificate file
@@ -52,7 +56,7 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 
 	// Read id file
 	if ep, err = utils.ExpandPath(idfPath); err == nil {
-		idf, err = utils.ReadFile(ep)
+		idfBytes, err = utils.ReadFile(ep)
 		if err != nil {
 			return map[string]interface{}{"Error": err.Error()}
 		}
@@ -69,8 +73,29 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 		return map[string]interface{}{"Error": err.Error()}
 	}
 
+	idfStruct := &idf.IdFile{}
+	err = json.Unmarshal(idfBytes, idfStruct)
+	if err != nil {
+		return map[string]interface{}{"Error": err.Error()}
+	}
+
+	nodeID, err := id.Unmarshal(idfStruct.IdBytes[:])
+	if err != nil {
+		return map[string]interface{}{"Error": err.Error()}
+	}
+
+	cl, err := client.StartClient(key, cert, idfStruct.Salt[:], nodeID)
+	if err != nil {
+		return map[string]interface{}{"Error": err.Error()}
+	}
+
+	h, err := connect.NewHost(&id.Permissioning, address, commitmentCert, connect.GetDefaultHostParams())
+	if err != nil {
+		return err
+	}
+
 	// Sign & transmit information
-	err = client.SignAndTransmit(key, cert, idf, commitmentCert, wallet, address)
+	err = client.SignAndTransmit(key, idfBytes, wallet, h, cl)
 	if err != nil {
 		return map[string]interface{}{"Error": err.Error()}
 	}
