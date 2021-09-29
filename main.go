@@ -15,6 +15,7 @@ import (
 
 var done chan bool
 
+// wasm compilations assigns SignAndTransmit func to signAndTransmit js global
 func main() {
 	f := js.FuncOf(SignAndTransmit)
 	js.Global().Set("signAndTransmit", f)
@@ -23,13 +24,14 @@ func main() {
 }
 
 // SignAndTransmit signs & transmits info to the commitments server
+// Accepts args nodeCertPath, nodeKeyPath, idfPath, wallet, commitmentsAddress, commitmentsCertPath
 func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
-	commitmentsCertPath := inputs[0].String()
-	certPath := inputs[1].String()
-	keyPath := inputs[2].String()
-	idfPath := inputs[3].String()
-	wallet := inputs[4].String()
-	address := inputs[5].String()
+	certPath := inputs[0].String()
+	keyPath := inputs[1].String()
+	idfPath := inputs[2].String()
+	wallet := inputs[3].String()
+	address := inputs[4].String()
+	commitmentsCertPath := inputs[5].String()
 
 	var cert, key, idfBytes, commitmentCert []byte
 	var err error
