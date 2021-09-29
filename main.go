@@ -91,7 +91,7 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 
 	h, err := connect.NewHost(&id.Permissioning, address, commitmentCert, connect.GetDefaultHostParams())
 	if err != nil {
-		return err
+		return map[string]interface{}{"Error": err.Error()}
 	}
 
 	// Sign & transmit information

@@ -5,12 +5,12 @@ import (
 	"crypto"
 	"crypto/sha256"
 	"encoding/json"
+	"git.xx.network/elixxir/mainnet-commitments/constants"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/crypto/signature/rsa"
-	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
 	"testing"
 )
@@ -25,15 +25,20 @@ type Params struct {
 
 // StartServer creates a server object from params
 func StartServer(params Params) (*Impl, error) {
-	pc, _, err := connect.StartCommServer(&id.Permissioning, params.Address, params.Cert, params.Key, nil)
+	// Create grpc server
+	pc, _, err := connect.StartCommServer(&constants.ServerID, params.Address, params.Cert, params.Key, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to start comms server")
 	}
+
+	// initialize storage
 	s, err := storage.NewStorage(params.StorageParams)
 	impl := &Impl{
 		pc: pc,
 		s:  s,
 	}
+
+	// Register verify implementation
 	messages.RegisterCommitmentsServer(pc.LocalServer, impl)
 	return impl, nil
 }

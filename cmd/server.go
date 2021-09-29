@@ -13,7 +13,7 @@ import (
 )
 
 // ExecuteServer adds all child commands to the root command and sets flags
-// appropriately.  This is called by main.main(). It only needs to
+// appropriately.  This is called by server.main(). It only needs to
 // happen once to the rootCmd.
 func ExecuteServer() {
 	if err := serverCmd.Execute(); err != nil {
@@ -22,7 +22,7 @@ func ExecuteServer() {
 	}
 }
 
-// rootCmd represents the base command when called without any subcommands
+// serverCmd starts a server for mainnet-commitments
 var serverCmd = &cobra.Command{
 	Use:   "mainnet-commitments-server",
 	Short: "Main command for mainnet-commitments server",

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"gitlab.com/xx_network/primitives/id"
 	"testing"
+	"time"
 )
 
 func setup(t *testing.T) (*Storage, error) {
@@ -11,9 +12,9 @@ func setup(t *testing.T) (*Storage, error) {
 		panic("Cannot run setup outside of testing")
 	}
 	p := Params{
-		Username: "jonahhusson",
+		Username: "",
 		Password: "",
-		DBName:   "commitments",
+		DBName:   "",
 		Address:  "0.0.0.0",
 		Port:     "5432",
 	}
@@ -53,5 +54,14 @@ func TestDatabase(t *testing.T) {
 	})
 	if err != nil {
 		t.Errorf("Failed to insert commitment for member 1: %+v", err)
+	}
+	err = s.InsertCommitment(Commitment{
+		Id:        id1.Bytes(),
+		Wallet:    "wallet2",
+		Signature: []byte("sig2"),
+		CreatedAt: time.Time{},
+	})
+	if err != nil {
+		t.Errorf("Failed to overwrite commitment for member 1: %+v", err)
 	}
 }
