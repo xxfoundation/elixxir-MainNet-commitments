@@ -14,6 +14,8 @@ type MapImpl struct {
 }
 
 func (db *MapImpl) InsertMembers(members []Member) error {
+	db.Lock()
+	defer db.Unlock()
 	for _, m := range members {
 		db.members[base64.StdEncoding.EncodeToString(m.Id)] = m
 	}
@@ -21,11 +23,15 @@ func (db *MapImpl) InsertMembers(members []Member) error {
 }
 
 func (db *MapImpl) InsertCommitment(commitment Commitment) error {
+	db.Lock()
+	defer db.Unlock()
 	db.commitments[base64.StdEncoding.EncodeToString(commitment.Id)] = commitment
 	return nil
 }
 
 func (db *MapImpl) GetMember(id []byte) (*Member, error) {
+	db.RLock()
+	defer db.RUnlock()
 	encoded := base64.StdEncoding.EncodeToString(id)
 	m, ok := db.members[encoded]
 	if !ok {

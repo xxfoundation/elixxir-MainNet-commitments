@@ -1,4 +1,4 @@
-package constants
+package utils
 
 import "gitlab.com/xx_network/primitives/id"
 

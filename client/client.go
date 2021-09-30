@@ -1,9 +1,8 @@
 package client
 
 import (
-	"crypto"
-	"crypto/sha256"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
+	"git.xx.network/elixxir/mainnet-commitments/utils"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/crypto/csprng"
@@ -16,21 +15,18 @@ func SignAndTransmit(pk, idfBytes []byte, wallet string, h *connect.Host, s Send
 	if err != nil {
 		return errors.WithMessage(err, "Failed to load private key")
 	}
-	hasher := sha256.New()
-	_, err = hasher.Write(idfBytes)
+
+	hashed, hash, err := utils.HashNodeInfo(wallet, idfBytes)
 	if err != nil {
-		return errors.WithMessage(err, "Failed to write IDF to hash")
+		return errors.WithMessage(err, "Failed to hash node info")
 	}
-	_, err = hasher.Write([]byte(wallet))
-	if err != nil {
-		return errors.WithMessage(err, "Failed to write wallet to hash")
-	}
-	sig, err := rsa.Sign(csprng.NewSystemRNG(), key, crypto.SHA256, hasher.Sum(nil), nil)
+
+	sig, err := rsa.Sign(csprng.NewSystemRNG(), key, hash, hashed, nil)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to sign node info")
 	}
 
-	err = s.SignAndTransmit(h, &messages.Commitment{
+	err = s.TransmitSignature(h, &messages.Commitment{
 		PrivateKey: pk,
 		IDF:        idfBytes,
 		Wallet:     wallet,

@@ -11,7 +11,7 @@ import (
 )
 
 type Sender interface {
-	SignAndTransmit(host *connect.Host, message *messages.Commitment) error
+	TransmitSignature(host *connect.Host, message *messages.Commitment) error
 }
 
 // Client struct implements the GRPC client call to mainnet-commitments servers
@@ -31,7 +31,7 @@ func StartClient(key, cert, salt []byte, id *id.ID) (*Client, error) {
 }
 
 // SignAndTransmit func sends a Commitment message to the mainnet-commitments server
-func (c *Client) SignAndTransmit(host *connect.Host, message *messages.Commitment) error {
+func (c *Client) TransmitSignature(host *connect.Host, message *messages.Commitment) error {
 	f := func(conn *grpc.ClientConn) (*any.Any, error) {
 		// Set up the context
 		ctx, cancel := host.GetMessagingContext()

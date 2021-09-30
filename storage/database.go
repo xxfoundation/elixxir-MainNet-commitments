@@ -7,6 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"sync"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type database interface {
 
 // DatabaseImpl struct implements the Database Interface with an underlying DB
 type DatabaseImpl struct {
+	sync.RWMutex
 	db *gorm.DB // Stored database connection
 }
 

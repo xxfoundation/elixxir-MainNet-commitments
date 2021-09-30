@@ -18,7 +18,7 @@ type MockSender struct {
 	id, cert []byte
 }
 
-func (ms *MockSender) SignAndTransmit(host *connect.Host, message *messages.Commitment) error {
+func (ms *MockSender) TransmitSignature(host *connect.Host, message *messages.Commitment) error {
 	s, err := storage.NewStorage(storage.Params{})
 	if err != nil {
 		ms.t.Error("Failed to init storage for mock server")

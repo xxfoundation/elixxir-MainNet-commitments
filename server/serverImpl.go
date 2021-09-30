@@ -2,12 +2,10 @@ package server
 
 import (
 	"context"
-	"crypto"
-	"crypto/sha256"
 	"encoding/json"
-	"git.xx.network/elixxir/mainnet-commitments/constants"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
+	"git.xx.network/elixxir/mainnet-commitments/utils"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/crypto/signature/rsa"
@@ -26,7 +24,7 @@ type Params struct {
 // StartServer creates a server object from params
 func StartServer(params Params) (*Impl, error) {
 	// Create grpc server
-	pc, _, err := connect.StartCommServer(&constants.ServerID, params.Address, params.Cert, params.Key, nil)
+	pc, _, err := connect.StartCommServer(&utils.ServerID, params.Address, params.Cert, params.Key, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to start comms server")
 	}
@@ -58,31 +56,26 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 		return nil, errors.WithMessage(err, "Failed to unmarshal IDF json")
 	}
 
+	// Hash node info from message
+	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, msg.IDF)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to hash node info")
+	}
+
 	// Get member info from database
 	m, err := i.s.GetMember(idfStruct.IdBytes[:])
 	if err != nil {
 		return nil, errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
 	}
 
-	// Hash IDF & Wallet
-	hasher := sha256.New()
-	_, err = hasher.Write(msg.IDF)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to write IDF to hasher")
-	}
-	_, err = hasher.Write([]byte(msg.Wallet))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to write wallet to hasher")
-	}
-
-	// Load certificate from database
+	// Load member certificate
 	cert, err := rsa.LoadPublicKeyFromPem(m.Cert)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to load certificate")
 	}
 
 	// Attempt to verify signature
-	err = rsa.Verify(cert, crypto.SHA256, hasher.Sum(nil), msg.Signature, nil)
+	err = rsa.Verify(cert, hash, hashed, msg.Signature, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Could not verify node commitment info signature")
 	}
