@@ -57,7 +57,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	}
 
 	// Hash node info from message
-	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, msg.IDF)
+	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, msg.IDF, msg.Contract)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to hash node info")
 	}
@@ -83,6 +83,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	// Insert commitment info to the database once verified
 	err = i.s.InsertCommitment(storage.Commitment{
 		Id:        m.Id,
+		Contract:  msg.Contract,
 		Wallet:    msg.Wallet,
 		Signature: msg.Signature,
 	})

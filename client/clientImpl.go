@@ -30,7 +30,7 @@ func StartClient(key, cert, salt []byte, id *id.ID) (*Client, error) {
 	}, nil
 }
 
-// SignAndTransmit func sends a Commitment message to the mainnet-commitments server
+// TransmitSignature func sends a Commitment message to the mainnet-commitments server
 func (c *Client) TransmitSignature(host *connect.Host, message *messages.Commitment) error {
 	f := func(conn *grpc.ClientConn) (*any.Any, error) {
 		// Set up the context

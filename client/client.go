@@ -10,13 +10,13 @@ import (
 )
 
 // SignAndTransmit creates a Client object & transmits commitment info to the server
-func SignAndTransmit(pk, idfBytes []byte, wallet string, h *connect.Host, s Sender) error {
+func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet string, h *connect.Host, s Sender) error {
 	key, err := rsa.LoadPrivateKeyFromPem(pk)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to load private key")
 	}
 
-	hashed, hash, err := utils.HashNodeInfo(wallet, idfBytes)
+	hashed, hash, err := utils.HashNodeInfo(wallet, idfBytes, contractBytes)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to hash node info")
 	}
@@ -29,6 +29,7 @@ func SignAndTransmit(pk, idfBytes []byte, wallet string, h *connect.Host, s Send
 	err = s.TransmitSignature(h, &messages.Commitment{
 		PrivateKey: pk,
 		IDF:        idfBytes,
+		Contract:   contractBytes,
 		Wallet:     wallet,
 		Signature:  sig,
 	})

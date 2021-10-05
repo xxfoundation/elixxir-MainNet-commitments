@@ -60,7 +60,8 @@ func TestSignAndTransmit(t *testing.T) {
 		t.Errorf("Failed to marshal IDF: %+v", err)
 	}
 
-	err = SignAndTransmit(rsa.CreatePrivateKeyPem(pk), idfBytes, "wallet", nil, &MockSender{t, nid.Bytes(), rsa.CreatePublicKeyPem(pk.GetPublic())})
+	contractBytes := []byte("I solemnly swear that I am up to no good")
+	err = SignAndTransmit(rsa.CreatePrivateKeyPem(pk), idfBytes, contractBytes, "wallet", nil, &MockSender{t, nid.Bytes(), rsa.CreatePublicKeyPem(pk.GetPublic())})
 	if err != nil {
 		t.Errorf("Failed to sign & transmit: %+v", err)
 	}

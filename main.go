@@ -24,16 +24,17 @@ func main() {
 }
 
 // SignAndTransmit signs & transmits info to the commitments server
-// Accepts args nodeCertPath, nodeKeyPath, idfPath, wallet, commitmentsAddress, commitmentsCertPath
+// Accepts args nodeCertPath, nodeKeyPath, idfPath, contractPath, wallet, commitmentsAddress, commitmentsCertPath
 func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	certPath := inputs[0].String()
 	keyPath := inputs[1].String()
 	idfPath := inputs[2].String()
-	wallet := inputs[3].String()
-	address := inputs[4].String()
-	commitmentsCertPath := inputs[5].String()
+	contractPath := inputs[3].String()
+	wallet := inputs[4].String()
+	address := inputs[5].String()
+	commitmentsCertPath := inputs[6].String()
 
-	var cert, key, idfBytes, commitmentCert []byte
+	var cert, key, idfBytes, commitmentCert, contractBytes []byte
 	var err error
 	var ep string
 	// Read certificate file
@@ -59,6 +60,15 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	// Read id file
 	if ep, err = utils.ExpandPath(idfPath); err == nil {
 		idfBytes, err = utils.ReadFile(ep)
+		if err != nil {
+			return map[string]interface{}{"Error": err.Error()}
+		}
+	} else {
+		return map[string]interface{}{"Error": err.Error()}
+	}
+
+	if ep, err = utils.ExpandPath(contractPath); err == nil {
+		contractBytes, err = utils.ReadFile(ep)
 		if err != nil {
 			return map[string]interface{}{"Error": err.Error()}
 		}
@@ -97,7 +107,7 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	}
 
 	// Sign & transmit information
-	err = client.SignAndTransmit(key, idfBytes, wallet, h, cl)
+	err = client.SignAndTransmit(key, idfBytes, contractBytes, wallet, h, cl)
 	if err != nil {
 		return map[string]interface{}{"Error": err.Error()}
 	}

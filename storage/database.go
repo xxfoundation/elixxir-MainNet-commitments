@@ -31,6 +31,7 @@ type Member struct {
 
 type Commitment struct {
 	Id        []byte `gorm:"primary_key"`
+	Contract  []byte `gorm:"not null"`
 	Wallet    string `gorm:"not null"`
 	Signature []byte `gorm:"not null"`
 	CreatedAt time.Time
