@@ -6,6 +6,7 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/comms/connect"
+	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"google.golang.org/grpc"
 )
@@ -20,8 +21,12 @@ type Client struct {
 }
 
 // StartClient func creates a client
-func StartClient(key, cert, salt []byte, id *id.ID) (*Client, error) {
-	pc, err := connect.CreateCommClient(id, cert, key, salt)
+func StartClient(key, salt []byte, id *id.ID) (*Client, error) {
+	pk, err := rsa.LoadPrivateKeyFromPem(key)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to load key")
+	}
+	pc, err := connect.CreateCommClient(id, rsa.CreatePublicKeyPem(pk.GetPublic()), key, salt)
 	if err != nil {
 		return nil, err
 	}
