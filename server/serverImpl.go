@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
@@ -17,14 +18,15 @@ import (
 type Params struct {
 	Key           []byte
 	Cert          []byte
-	Address       string
+	Port          string
 	StorageParams storage.Params
 }
 
 // StartServer creates a server object from params
 func StartServer(params Params) (*Impl, error) {
 	// Create grpc server
-	pc, _, err := connect.StartCommServer(&utils.ServerID, params.Address, params.Cert, params.Key, nil)
+	pc, _, err := connect.StartCommServer(&utils.ServerID, fmt.Sprintf("0.0.0.0:%s", params.Port),
+		params.Cert, params.Key, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to start comms server")
 	}
