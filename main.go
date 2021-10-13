@@ -37,7 +37,7 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	idfPath := inputs[1].String()
 	contractPath := inputs[2].String()
 	wallet := inputs[3].String()
-	address := inputs[4].String()
+	commitmentServerAddress := inputs[4].String()
 	commitmentsCertPath := inputs[5].String()
 
 	var key, idfBytes, commitmentCert, contractBytes []byte
@@ -98,7 +98,7 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 		return map[string]interface{}{"Error": err.Error()}
 	}
 
-	h, err := connect.NewHost(&id.Permissioning, address, commitmentCert, connect.GetDefaultHostParams())
+	h, err := connect.NewHost(&id.Permissioning, commitmentServerAddress, commitmentCert, connect.GetDefaultHostParams())
 	if err != nil {
 		return map[string]interface{}{"Error": err.Error()}
 	}
