@@ -15,6 +15,7 @@ import (
 	"git.xx.network/elixxir/mainnet-commitments/storage"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
 	"github.com/pkg/errors"
+	"github.com/xx-labs/sleeve/wallet"
 	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id/idf"
@@ -63,6 +64,14 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	err := json.Unmarshal(msg.IDF, idfStruct)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to unmarshal IDF json")
+	}
+
+	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to validate wallet address")
+	}
+	if !ok {
+		return nil, errors.New("Wallet validation returned false")
 	}
 
 	// Hash node info from message
