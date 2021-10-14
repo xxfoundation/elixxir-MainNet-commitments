@@ -15,6 +15,7 @@ import (
 	"git.xx.network/elixxir/mainnet-commitments/storage"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
 	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 	"github.com/xx-labs/sleeve/wallet"
 	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/crypto/signature/rsa"
@@ -63,39 +64,55 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	idfStruct := &idf.IdFile{}
 	err := json.Unmarshal(msg.IDF, idfStruct)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to unmarshal IDF json")
+		err = errors.WithMessage(err, "Failed to unmarshal IDF json")
+		jww.ERROR.Printf(err.Error())
+		return nil, err
 	}
+
+	jww.INFO.Printf("Received verification request from %+v", idfStruct.ID)
 
 	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to validate wallet address")
+		err = errors.WithMessage(err, "Failed to validate wallet address")
+		jww.ERROR.Printf(err.Error())
+		return nil, err
 	}
 	if !ok {
-		return nil, errors.New("Wallet validation returned false")
+		err = errors.New("Wallet validation returned false")
+		jww.ERROR.Printf(err.Error())
+		return nil, err
 	}
 
 	// Hash node info from message
 	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, msg.IDF, msg.Contract)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to hash node info")
+		err = errors.WithMessage(err, "Failed to hash node info")
+		jww.ERROR.Printf(err.Error())
+		return nil, err
 	}
 
 	// Get member info from database
 	m, err := i.s.GetMember(idfStruct.IdBytes[:])
 	if err != nil {
-		return nil, errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
+		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
+		jww.ERROR.Printf(err.Error())
+		return nil, err
 	}
 
 	// Load member certificate
 	cert, err := rsa.LoadPublicKeyFromPem(m.Cert)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to load certificate")
+		err = errors.WithMessage(err, "Failed to load certificate")
+		jww.ERROR.Printf(err.Error())
+		return nil, err
 	}
 
 	// Attempt to verify signature
 	err = rsa.Verify(cert, hash, hashed, msg.Signature, nil)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Could not verify node commitment info signature")
+		err = errors.WithMessage(err, "Could not verify node commitment info signature")
+		jww.ERROR.Printf(err.Error())
+		return nil, err
 	}
 
 	// Insert commitment info to the database once verified
@@ -105,6 +122,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 		Wallet:    msg.Wallet,
 		Signature: msg.Signature,
 	})
+	jww.INFO.Printf("Registered commitment from %+v [%+v]", idfStruct.ID, msg.Wallet)
 	return &messages.CommitmentResponse{}, nil
 }
 
