@@ -34,11 +34,10 @@ func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet string, h *conne
 	}
 
 	err = s.TransmitSignature(h, &messages.Commitment{
-		PrivateKey: pk,
-		IDF:        idfBytes,
-		Contract:   contractBytes,
-		Wallet:     wallet,
-		Signature:  sig,
+		IDF:       idfBytes,
+		Contract:  contractBytes,
+		Wallet:    wallet,
+		Signature: sig,
 	})
 
 	if err != nil {

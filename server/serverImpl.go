@@ -105,7 +105,8 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	}
 
 	// Get member info from database
-	m, err := i.s.GetMember(idfStruct.IdBytes[:])
+	hexId := "\\" + idfStruct.HexNodeID[1:]
+	m, err := i.s.GetMember([]byte(hexId))
 	if err != nil {
 		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
 		jww.ERROR.Printf(err.Error())

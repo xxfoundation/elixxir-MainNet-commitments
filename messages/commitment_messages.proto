@@ -19,9 +19,8 @@ message CommitmentResponse {
 }
 
 message Commitment {
-    bytes PrivateKey = 1;
-    bytes IDF = 2;
-    bytes Contract = 3;
-    string Wallet = 4;
-    bytes Signature = 5;
+    bytes IDF = 1;
+    bytes Contract = 2;
+    string Wallet = 3;
+    bytes Signature = 4;
 }
