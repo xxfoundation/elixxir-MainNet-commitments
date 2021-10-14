@@ -75,7 +75,7 @@ var serverCmd = &cobra.Command{
 		params := server.Params{
 			Key:  key,
 			Cert: cert,
-			Port: viper.GetString("address"),
+			Port: viper.GetString("port"),
 			StorageParams: storage.Params{
 				Username: viper.GetString("dbUsername"),
 				Password: viper.GetString("dbPassword"),

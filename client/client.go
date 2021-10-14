@@ -109,11 +109,10 @@ func SignAndTransmit(keyPath, idfPath, contractPath, wallet, commitmentsAddress,
 
 	fmt.Println("Transmitting signature...")
 	err = cl.TransmitSignature(h, &messages.Commitment{
-		PrivateKey: pk,
-		IDF:        idfBytes,
-		Contract:   contractBytes,
-		Wallet:     wallet,
-		Signature:  sig,
+		IDF:       idfBytes,
+		Contract:  contractBytes,
+		Wallet:    wallet,
+		Signature: sig,
 	})
 
 	if err != nil {

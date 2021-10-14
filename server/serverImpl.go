@@ -35,7 +35,8 @@ type Params struct {
 // StartServer creates a server object from params
 func StartServer(params Params) (*Impl, error) {
 	// Create grpc server
-	pc, lis, err := connect.StartCommServer(&utils.ServerID, fmt.Sprintf("0.0.0.0:%s", params.Port),
+	addr := fmt.Sprintf("0.0.0.0:%s", params.Port)
+	pc, lis, err := connect.StartCommServer(&utils.ServerID, addr,
 		params.Cert, params.Key, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to start comms server")
@@ -61,7 +62,6 @@ func StartServer(params Params) (*Impl, error) {
 			" %s", lis)
 	}()
 
-	// Register verify implementation
 	return impl, nil
 }
 
@@ -105,7 +105,8 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	}
 
 	// Get member info from database
-	m, err := i.s.GetMember(idfStruct.IdBytes[:])
+	hexId := "\\" + idfStruct.HexNodeID[1:]
+	m, err := i.s.GetMember([]byte(hexId))
 	if err != nil {
 		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
 		jww.ERROR.Printf(err.Error())
