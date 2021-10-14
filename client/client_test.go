@@ -8,10 +8,12 @@
 package client
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/server"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
+	"github.com/xx-labs/sleeve/wallet"
 	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/crypto/signature/rsa"
@@ -67,8 +69,14 @@ func TestSignAndTransmit(t *testing.T) {
 		t.Errorf("Failed to marshal IDF: %+v", err)
 	}
 
+	s, err := wallet.NewSleeve(rand.Reader, "password")
+	if err != nil {
+		t.Errorf("Failed to create sleeve: %+v", err)
+	}
+	waddr := wallet.XXNetworkAddressFromMnemonic(s.GetOutputMnemonic())
+
 	contractBytes := []byte("I solemnly swear that I am up to no good")
-	err = SignAndTransmit(rsa.CreatePrivateKeyPem(pk), idfBytes, contractBytes, "wallet", nil, &MockSender{t, nid.Bytes(), rsa.CreatePublicKeyPem(pk.GetPublic())})
+	err = SignAndTransmit(rsa.CreatePrivateKeyPem(pk), idfBytes, contractBytes, waddr, nil, &MockSender{t, nid.Bytes(), rsa.CreatePublicKeyPem(pk.GetPublic())})
 	if err != nil {
 		t.Errorf("Failed to sign & transmit: %+v", err)
 	}
