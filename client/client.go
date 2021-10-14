@@ -85,7 +85,9 @@ func SignAndTransmit(keyPath, idfPath, contractPath, wallet, commitmentsAddress,
 		return err
 	}
 
-	h, err := cl.pc.AddHost(&utils.ServerID, commitmentsAddress, commitmentCert, connect.GetDefaultHostParams())
+	hp := connect.GetDefaultHostParams()
+	hp.AuthEnabled = false
+	h, err := cl.pc.AddHost(&utils.ServerID, commitmentsAddress, commitmentCert, hp)
 	if err != nil {
 		return err
 	}
