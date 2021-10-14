@@ -8,16 +8,88 @@
 package client
 
 import (
+	"encoding/json"
+	"fmt"
+
+	"gitlab.com/xx_network/comms/connect"
+	utils2 "gitlab.com/xx_network/primitives/utils"
+
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
+
 	"github.com/pkg/errors"
-	"gitlab.com/xx_network/comms/connect"
+
 	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/crypto/signature/rsa"
+	"gitlab.com/xx_network/primitives/id"
+	"gitlab.com/xx_network/primitives/id/idf"
 )
 
 // SignAndTransmit creates a Client object & transmits commitment info to the server
-func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet string, h *connect.Host, s Sender) error {
+func SignAndTransmit(keyPath, idfPath, contractPath, wallet, commitmentsAddress, commitmentsCertPath string) error {
+	var pk, idfBytes, commitmentCert, contractBytes []byte
+	var err error
+	var ep string
+
+	// Read key file
+	if ep, err = utils2.ExpandPath(keyPath); err == nil {
+		pk, err = utils2.ReadFile(ep)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
+	// Read id file
+	if ep, err = utils2.ExpandPath(idfPath); err == nil {
+		idfBytes, err = utils2.ReadFile(ep)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
+	if ep, err = utils2.ExpandPath(contractPath); err == nil {
+		contractBytes, err = utils2.ReadFile(ep)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
+	if ep, err = utils2.ExpandPath(commitmentsCertPath); err == nil {
+		commitmentCert, err = utils2.ReadFile(ep)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
+	idfStruct := &idf.IdFile{}
+	err = json.Unmarshal(idfBytes, idfStruct)
+	if err != nil {
+		return err
+	}
+
+	nodeID, err := id.Unmarshal(idfStruct.IdBytes[:])
+	if err != nil {
+		return err
+	}
+
+	cl, err := StartClient(pk, idfStruct.Salt[:], nodeID)
+	if err != nil {
+		return err
+	}
+
+	h, err := cl.pc.AddHost(&utils.ServerID, commitmentsAddress, commitmentCert, connect.GetDefaultHostParams())
+	if err != nil {
+		return err
+	}
+
 	key, err := rsa.LoadPrivateKeyFromPem(pk)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to load private key")
@@ -33,7 +105,8 @@ func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet string, h *conne
 		return errors.WithMessage(err, "Failed to sign node info")
 	}
 
-	err = s.TransmitSignature(h, &messages.Commitment{
+	fmt.Println("Transmitting signature...")
+	err = cl.TransmitSignature(h, &messages.Commitment{
 		PrivateKey: pk,
 		IDF:        idfBytes,
 		Contract:   contractBytes,

@@ -8,6 +8,7 @@
 package client
 
 import (
+	"fmt"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -45,6 +46,7 @@ func StartClient(key, salt []byte, id *id.ID) (*Client, error) {
 // TransmitSignature func sends a Commitment message to the mainnet-commitments server
 func (c *Client) TransmitSignature(host *connect.Host, message *messages.Commitment) error {
 	f := func(conn *grpc.ClientConn) (*any.Any, error) {
+		fmt.Println(1)
 		// Set up the context
 		ctx, cancel := host.GetMessagingContext()
 		defer cancel()

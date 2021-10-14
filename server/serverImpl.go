@@ -20,6 +20,7 @@ import (
 	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id/idf"
+	"google.golang.org/grpc/reflection"
 	"testing"
 )
 
@@ -34,7 +35,7 @@ type Params struct {
 // StartServer creates a server object from params
 func StartServer(params Params) (*Impl, error) {
 	// Create grpc server
-	pc, _, err := connect.StartCommServer(&utils.ServerID, fmt.Sprintf("0.0.0.0:%s", params.Port),
+	pc, lis, err := connect.StartCommServer(&utils.ServerID, fmt.Sprintf("0.0.0.0:%s", params.Port),
 		params.Cert, params.Key, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to start comms server")
@@ -47,8 +48,20 @@ func StartServer(params Params) (*Impl, error) {
 		s:  s,
 	}
 
+	go func() {
+		messages.RegisterCommitmentsServer(pc.LocalServer, impl)
+
+		// Register reflection service on gRPC server.
+		reflection.Register(pc.LocalServer)
+		if err := pc.LocalServer.Serve(lis); err != nil {
+			err = errors.New(err.Error())
+			jww.FATAL.Panicf("Failed to serve: %+v", err)
+		}
+		jww.INFO.Printf("Shutting down registration server listener:"+
+			" %s", lis)
+	}()
+
 	// Register verify implementation
-	messages.RegisterCommitmentsServer(pc.LocalServer, impl)
 	return impl, nil
 }
 
