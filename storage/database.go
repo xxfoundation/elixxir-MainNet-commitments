@@ -22,7 +22,7 @@ type database interface {
 	InsertMembers([]Member) error
 	InsertCommitment(Commitment) error
 
-	GetMember(id []byte) (*Member, error)
+	GetMember(hexID string) (*Member, error)
 }
 
 // DatabaseImpl struct implements the Database Interface with an underlying DB

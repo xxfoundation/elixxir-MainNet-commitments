@@ -9,7 +9,10 @@ package server
 
 import (
 	"context"
+	gorsa "crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
@@ -106,23 +109,26 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 
 	// Get member info from database
 	hexId := "\\" + idfStruct.HexNodeID[1:]
-	m, err := i.s.GetMember([]byte(hexId))
+	m, err := i.s.GetMember(hexId)
 	if err != nil {
 		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
 		jww.ERROR.Printf(err.Error())
 		return nil, err
 	}
 
-	// Load member certificate
-	cert, err := rsa.LoadPublicKeyFromPem(m.Cert)
+	block, rest := pem.Decode(m.Cert)
+	jww.INFO.Printf("Decoded cert into block: %+v, rest: %+v", block, rest)
+	var cert *x509.Certificate
+	cert, err = x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to load certificate")
 		jww.ERROR.Printf(err.Error())
 		return nil, err
 	}
+	rsaPublicKey := cert.PublicKey.(*gorsa.PublicKey)
 
 	// Attempt to verify signature
-	err = rsa.Verify(cert, hash, hashed, msg.Signature, nil)
+	err = rsa.Verify(&rsa.PublicKey{PublicKey: *rsaPublicKey}, hash, hashed, msg.Signature, nil)
 	if err != nil {
 		err = errors.WithMessage(err, "Could not verify node commitment info signature")
 		jww.ERROR.Printf(err.Error())

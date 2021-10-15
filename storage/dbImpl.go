@@ -7,7 +7,10 @@
 
 package storage
 
-import "gorm.io/gorm/clause"
+import (
+	jww "github.com/spf13/jwalterweatherman"
+	"gorm.io/gorm/clause"
+)
 
 func (db *DatabaseImpl) InsertMembers(members []Member) error {
 	db.Lock()
@@ -21,9 +24,10 @@ func (db *DatabaseImpl) InsertCommitment(commitment Commitment) error {
 	return db.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&commitment).Error
 }
 
-func (db *DatabaseImpl) GetMember(id []byte) (*Member, error) {
+func (db *DatabaseImpl) GetMember(id string) (*Member, error) {
 	db.RLock()
 	defer db.RUnlock()
+	jww.INFO.Printf("Getting member with id %+v", id)
 	m := Member{}
 	return &m, db.db.First(&m, "id = ?", id).Error
 }

@@ -32,15 +32,14 @@ func (db *MapImpl) InsertMembers(members []Member) error {
 func (db *MapImpl) InsertCommitment(commitment Commitment) error {
 	db.Lock()
 	defer db.Unlock()
-	db.commitments[base64.StdEncoding.EncodeToString(commitment.Id)] = commitment
+	db.commitments[string(commitment.Id)] = commitment
 	return nil
 }
 
-func (db *MapImpl) GetMember(id []byte) (*Member, error) {
+func (db *MapImpl) GetMember(id string) (*Member, error) {
 	db.RLock()
 	defer db.RUnlock()
-	encoded := base64.StdEncoding.EncodeToString(id)
-	m, ok := db.members[encoded]
+	m, ok := db.members[id]
 	if !ok {
 		return nil, errors.Errorf("No member in MapImpl with id %+v", id)
 	}

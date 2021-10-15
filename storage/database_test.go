@@ -47,7 +47,7 @@ func TestDatabase(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to insert members: %+v", err)
 	}
-	rm, err := s.GetMember(id1.Bytes())
+	rm, err := s.GetMember(id1.HexEncode())
 	if err != nil {
 		t.Errorf("Failed to get member: %+v", err)
 	}
