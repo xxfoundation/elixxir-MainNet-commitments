@@ -93,7 +93,7 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	}
 
 	// Sign & transmit information
-	err = client.SignAndTransmit(key, idfBytes, contractBytes, wallet)
+	err = client.SignAndTransmit(key, idfBytes, contractBytes, wallet, commitmentsCertPath, commitmentServerAddress)
 	if err != nil {
 		return map[string]interface{}{"Error": err.Error()}
 	}
