@@ -3,6 +3,8 @@ module git.xx.network/elixxir/mainnet-commitments
 go 1.16
 
 require (
+	github.com/gin-gonic/gin v1.7.4
+	github.com/go-resty/resty/v2 v2.6.0 // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.2.1

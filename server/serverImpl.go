@@ -13,17 +13,15 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
-	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/xx-labs/sleeve/wallet"
-	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id/idf"
-	"google.golang.org/grpc/reflection"
+	"net/http"
 	"testing"
 )
 
@@ -35,54 +33,55 @@ type Params struct {
 	StorageParams storage.Params
 }
 
-// StartServer creates a server object from params
-func StartServer(params Params) (*Impl, error) {
-	// Create grpc server
-	addr := fmt.Sprintf("0.0.0.0:%s", params.Port)
-	pc, lis, err := connect.StartCommServer(&utils.ServerID, addr,
-		params.Cert, params.Key, nil)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to start comms server")
-	}
+type Commitment struct {
+	IDF       []byte `json:"idf"`
+	Contract  []byte `json:"contract"`
+	Wallet    string `json:"wallet"`
+	Signature []byte `json:"signature"`
+}
 
+// StartServer creates a server object from params
+func StartServer(params Params) error {
 	// initialize storage
 	s, err := storage.NewStorage(params.StorageParams)
+	if err != nil {
+		return err
+	}
 	impl := &Impl{
-		pc: pc,
-		s:  s,
+		s: s,
 	}
 
-	go func() {
-		messages.RegisterCommitmentsServer(pc.LocalServer, impl)
-
-		// Register reflection service on gRPC server.
-		reflection.Register(pc.LocalServer)
-		if err := pc.LocalServer.Serve(lis); err != nil {
-			err = errors.New(err.Error())
-			jww.FATAL.Panicf("Failed to serve: %+v", err)
+	r := gin.Default()
+	r.POST("/commitment", func(c *gin.Context) {
+		var newCommitment Commitment
+		if err := c.BindJSON(&newCommitment); err != nil {
+			return
 		}
-		jww.INFO.Printf("Shutting down registration server listener:"+
-			" %s", lis)
-	}()
-
-	return impl, nil
+		err := impl.Verify(c, newCommitment)
+		if err != nil {
+			return
+		}
+		c.IndentedJSON(http.StatusAccepted, newCommitment)
+	})
+	impl.comms = r
+	return r.Run()
 }
 
 // Impl struct stores protocomms & storage for server implementation
 type Impl struct {
-	pc *connect.ProtoComms
-	s  *storage.Storage
+	comms *gin.Engine
+	s     *storage.Storage
 }
 
 // Verify func is the main endpoint for the mainnet-commitments server
-func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.CommitmentResponse, error) {
+func (i *Impl) Verify(_ context.Context, msg Commitment) error {
 	// Load IDF from JSON bytes
 	idfStruct := &idf.IdFile{}
 	err := json.Unmarshal(msg.IDF, idfStruct)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to unmarshal IDF json")
 		jww.ERROR.Printf(err.Error())
-		return nil, err
+		return err
 	}
 
 	jww.INFO.Printf("Received verification request from %+v", idfStruct.ID)
@@ -91,12 +90,12 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to validate wallet address")
 		jww.ERROR.Printf(err.Error())
-		return nil, err
+		return err
 	}
 	if !ok {
 		err = errors.New("Wallet validation returned false")
 		jww.ERROR.Printf(err.Error())
-		return nil, err
+		return err
 	}
 
 	// Hash node info from message
@@ -104,7 +103,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to hash node info")
 		jww.ERROR.Printf(err.Error())
-		return nil, err
+		return err
 	}
 
 	// Get member info from database
@@ -113,7 +112,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	if err != nil {
 		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
 		jww.ERROR.Printf(err.Error())
-		return nil, err
+		return err
 	}
 
 	block, rest := pem.Decode(m.Cert)
@@ -123,7 +122,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to load certificate")
 		jww.ERROR.Printf(err.Error())
-		return nil, err
+		return err
 	}
 	rsaPublicKey := cert.PublicKey.(*gorsa.PublicKey)
 
@@ -132,7 +131,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 	if err != nil {
 		err = errors.WithMessage(err, "Could not verify node commitment info signature")
 		jww.ERROR.Printf(err.Error())
-		return nil, err
+		return err
 	}
 
 	// Insert commitment info to the database once verified
@@ -143,11 +142,7 @@ func (i *Impl) Verify(_ context.Context, msg *messages.Commitment) (*messages.Co
 		Signature: msg.Signature,
 	})
 	jww.INFO.Printf("Registered commitment from %+v [%+v]", idfStruct.ID, msg.Wallet)
-	return &messages.CommitmentResponse{}, nil
-}
-
-func (i *Impl) Stop() {
-	i.pc.Shutdown()
+	return nil
 }
 
 func (i *Impl) GetStorage() *storage.Storage {
