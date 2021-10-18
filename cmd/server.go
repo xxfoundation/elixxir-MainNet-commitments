@@ -41,28 +41,14 @@ var serverCmd = &cobra.Command{
 		initConfig()
 		initLog()
 
-		certPath := viper.GetString("certPath")
-		keyPath := viper.GetString("keyPath")
-		var cert, key []byte
-		var err error
-		if ep, err := utils.ExpandPath(certPath); err == nil {
-			cert, err = utils.ReadFile(ep)
-			if err != nil {
-				jww.FATAL.Panicf("Failed to read cert file at path %s: %+v", ep, err)
-			}
-		} else {
-			jww.FATAL.Panicf("Failed to expand certificate path: %+v", err)
+		certPath, err := utils.ExpandPath(viper.GetString("certPath"))
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to expand cert path: %+v", err)
 		}
-
-		if ep, err := utils.ExpandPath(keyPath); err == nil {
-			key, err = utils.ReadFile(ep)
-			if err != nil {
-				jww.FATAL.Panicf("Failed to read key file at path %s: %+v", ep, err)
-			}
-		} else {
-			jww.FATAL.Panicf("Failed to expand key path: %+v", err)
+		keyPath, err := utils.ExpandPath(viper.GetString("keyPath"))
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to expand key path: %+v", err)
 		}
-
 		rawAddr := viper.GetString("dbAddress")
 		var addr, port string
 		if rawAddr != "" {
@@ -73,9 +59,9 @@ var serverCmd = &cobra.Command{
 		}
 
 		params := server.Params{
-			Key:  key,
-			Cert: cert,
-			Port: viper.GetString("port"),
+			KeyPath:  keyPath,
+			CertPath: certPath,
+			Port:     viper.GetString("port"),
 			StorageParams: storage.Params{
 				Username: viper.GetString("dbUsername"),
 				Password: viper.GetString("dbPassword"),
@@ -84,11 +70,11 @@ var serverCmd = &cobra.Command{
 				Port:     port,
 			},
 		}
-		s, err := server.StartServer(params)
+		err = server.StartServer(params)
 		var stopCh = make(chan bool)
 		select {
 		case <-stopCh:
-			s.Stop()
+			return
 		}
 	},
 }

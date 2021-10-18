@@ -13,6 +13,8 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
+	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
 	"github.com/gin-gonic/gin"
@@ -27,17 +29,10 @@ import (
 
 // Params struct holds data needed to create a server Impl
 type Params struct {
-	Key           []byte
-	Cert          []byte
+	KeyPath       string
+	CertPath      string
 	Port          string
 	StorageParams storage.Params
-}
-
-type Commitment struct {
-	IDF       []byte `json:"idf"`
-	Contract  []byte `json:"contract"`
-	Wallet    string `json:"wallet"`
-	Signature []byte `json:"signature"`
 }
 
 // StartServer creates a server object from params
@@ -53,7 +48,7 @@ func StartServer(params Params) error {
 
 	r := gin.Default()
 	r.POST("/commitment", func(c *gin.Context) {
-		var newCommitment Commitment
+		var newCommitment messages.Commitment
 		if err := c.BindJSON(&newCommitment); err != nil {
 			return
 		}
@@ -64,7 +59,7 @@ func StartServer(params Params) error {
 		c.IndentedJSON(http.StatusAccepted, newCommitment)
 	})
 	impl.comms = r
-	return r.Run()
+	return r.RunTLS(fmt.Sprintf("0.0.0.0:%s", params.Port), params.CertPath, params.KeyPath)
 }
 
 // Impl struct stores protocomms & storage for server implementation
@@ -74,7 +69,7 @@ type Impl struct {
 }
 
 // Verify func is the main endpoint for the mainnet-commitments server
-func (i *Impl) Verify(_ context.Context, msg Commitment) error {
+func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	// Load IDF from JSON bytes
 	idfStruct := &idf.IdFile{}
 	err := json.Unmarshal(msg.IDF, idfStruct)

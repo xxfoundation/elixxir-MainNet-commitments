@@ -13,7 +13,6 @@ package main
 import (
 	"encoding/json"
 	"git.xx.network/elixxir/mainnet-commitments/client"
-	"gitlab.com/xx_network/comms/connect"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
 	"gitlab.com/xx_network/primitives/utils"
@@ -93,18 +92,8 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 		return map[string]interface{}{"Error": err.Error()}
 	}
 
-	cl, err := client.StartClient(key, idfStruct.Salt[:], nodeID)
-	if err != nil {
-		return map[string]interface{}{"Error": err.Error()}
-	}
-
-	h, err := connect.NewHost(&id.Permissioning, commitmentServerAddress, commitmentCert, connect.GetDefaultHostParams())
-	if err != nil {
-		return map[string]interface{}{"Error": err.Error()}
-	}
-
 	// Sign & transmit information
-	err = client.SignAndTransmit(key, idfBytes, contractBytes, wallet, h, cl)
+	err = client.SignAndTransmit(key, idfBytes, contractBytes, wallet)
 	if err != nil {
 		return map[string]interface{}{"Error": err.Error()}
 	}
