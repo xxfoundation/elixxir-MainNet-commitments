@@ -36,11 +36,11 @@ func TestDatabase(t *testing.T) {
 	}
 	id1 := id.NewIdFromString("zezimaone", id.Node, t)
 	m1 := Member{
-		Id:   id1.Bytes(),
+		Id:   []byte(id1.HexEncode()),
 		Cert: []byte("cert1"),
 	}
 	m2 := Member{
-		Id:   id.NewIdFromString("zezimatwo", id.Node, t).Bytes(),
+		Id:   []byte(id.NewIdFromString("zezimatwo", id.Node, t).HexEncode()),
 		Cert: []byte("cert2"),
 	}
 	err = s.InsertMembers([]Member{m1, m2})

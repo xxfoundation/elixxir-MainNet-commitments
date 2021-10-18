@@ -39,7 +39,8 @@ func (db *MapImpl) InsertCommitment(commitment Commitment) error {
 func (db *MapImpl) GetMember(id string) (*Member, error) {
 	db.RLock()
 	defer db.RUnlock()
-	m, ok := db.members[id]
+	modified := base64.StdEncoding.EncodeToString([]byte(id))
+	m, ok := db.members[modified]
 	if !ok {
 		return nil, errors.Errorf("No member in MapImpl with id %+v", id)
 	}
