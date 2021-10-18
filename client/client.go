@@ -18,22 +18,25 @@ import (
 
 // SignAndTransmit creates a Client object & transmits commitment info to the server
 func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverCertPath, serverAddress string) error {
+	// Create new resty client
 	cl := resty.New()
-	cl.SetRootCertificate(serverCertPath)
+	cl.SetRootCertificate(serverCertPath) // Set commitments root certificate
+
+	// Hash & sign node info
 	key, err := rsa.LoadPrivateKeyFromPem(pk)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to load private key")
 	}
-
 	hashed, hash, err := utils.HashNodeInfo(wallet, idfBytes, contractBytes)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to hash node info")
 	}
-
 	sig, err := rsa.Sign(csprng.NewSystemRNG(), key, hash, hashed, nil)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to sign node info")
 	}
+
+	// Build message body & post to server
 	body := messages.Commitment{
 		IDF:       idfBytes,
 		Contract:  contractBytes,
@@ -44,7 +47,7 @@ func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverCertPath,
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).
 		SetResult(messages.Commitment{}).
-		SetError(nil).
+		SetError(nil). // TODO: error response structure?
 		Post(serverAddress)
 
 	if err != nil {

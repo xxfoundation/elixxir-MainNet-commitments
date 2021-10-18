@@ -1,5 +1,6 @@
 package messages
 
+// Commitment struct defines the JSON structure used by the REST api
 type Commitment struct {
 	IDF       []byte `json:"idf"`
 	Contract  []byte `json:"contract"`

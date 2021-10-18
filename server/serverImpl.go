@@ -46,6 +46,7 @@ func StartServer(params Params) error {
 		s: s,
 	}
 
+	// Build gin server, link to verify code
 	r := gin.Default()
 	r.POST("/commitment", func(c *gin.Context) {
 		var newCommitment messages.Commitment
@@ -59,6 +60,8 @@ func StartServer(params Params) error {
 		c.IndentedJSON(http.StatusAccepted, newCommitment)
 	})
 	impl.comms = r
+
+	// Run with TLS
 	return r.RunTLS(fmt.Sprintf("0.0.0.0:%s", params.Port), params.CertPath, params.KeyPath)
 }
 
