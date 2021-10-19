@@ -11,6 +11,7 @@ import (
 	"context"
 	gorsa "crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -49,15 +50,24 @@ func StartServer(params Params) error {
 	// Build gin server, link to verify code
 	r := gin.Default()
 	r.POST("/commitment", func(c *gin.Context) {
+		jww.DEBUG.Printf("Received commitment request %+v...", c.Request)
 		var newCommitment messages.Commitment
 		if err := c.BindJSON(&newCommitment); err != nil {
+			jww.INFO.Printf("Failed to bind JSON: %+v", err)
+			_ = c.Error(err)
+			c.Status(http.StatusBadRequest)
 			return
 		}
+		jww.INFO.Printf("Received commitment request %+v", newCommitment)
 		err := impl.Verify(c, newCommitment)
 		if err != nil {
+			jww.INFO.Printf("Failed to verify commitment: %+v", err)
+			_ = c.Error(err)
+			c.Status(http.StatusForbidden)
 			return
 		}
 		c.IndentedJSON(http.StatusAccepted, newCommitment)
+
 	})
 	impl.comms = r
 
@@ -73,12 +83,18 @@ type Impl struct {
 
 // Verify func is the main endpoint for the mainnet-commitments server
 func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
-	// Load IDF from JSON bytes
+	// Load IDF from JSON
 	idfStruct := &idf.IdFile{}
-	err := json.Unmarshal(msg.IDF, idfStruct)
+	idfBytes, err := base64.URLEncoding.DecodeString(msg.IDF)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to decode IDF string")
+		jww.ERROR.Println(err)
+		return err
+	}
+	err = json.Unmarshal(idfBytes, idfStruct)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to unmarshal IDF json")
-		jww.ERROR.Printf(err.Error())
+		jww.ERROR.Println(err)
 		return err
 	}
 
@@ -87,20 +103,24 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to validate wallet address")
-		jww.ERROR.Printf(err.Error())
+		jww.ERROR.Println(err)
 		return err
 	}
 	if !ok {
 		err = errors.New("Wallet validation returned false")
-		jww.ERROR.Printf(err.Error())
+		jww.ERROR.Println(err)
 		return err
 	}
 
 	// Hash node info from message
-	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, msg.IDF, msg.Contract)
+	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to decode contract from base64")
+	}
+	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, idfBytes, contractBytes)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to hash node info")
-		jww.ERROR.Printf(err.Error())
+		jww.ERROR.Println(err)
 		return err
 	}
 
@@ -109,7 +129,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	m, err := i.s.GetMember(hexId)
 	if err != nil {
 		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
-		jww.ERROR.Printf(err.Error())
+		jww.ERROR.Println(err)
 		return err
 	}
 
@@ -119,25 +139,32 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	cert, err = x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to load certificate")
-		jww.ERROR.Printf(err.Error())
+		jww.ERROR.Println(err)
 		return err
 	}
 	rsaPublicKey := cert.PublicKey.(*gorsa.PublicKey)
 
+	sigBytes, err := base64.URLEncoding.DecodeString(msg.Signature)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to decode signature from base64")
+		jww.ERROR.Println(err)
+		return err
+	}
+
 	// Attempt to verify signature
-	err = rsa.Verify(&rsa.PublicKey{PublicKey: *rsaPublicKey}, hash, hashed, msg.Signature, nil)
+	err = rsa.Verify(&rsa.PublicKey{PublicKey: *rsaPublicKey}, hash, hashed, sigBytes, nil)
 	if err != nil {
 		err = errors.WithMessage(err, "Could not verify node commitment info signature")
-		jww.ERROR.Printf(err.Error())
+		jww.ERROR.Println(err)
 		return err
 	}
 
 	// Insert commitment info to the database once verified
 	err = i.s.InsertCommitment(storage.Commitment{
 		Id:        m.Id,
-		Contract:  msg.Contract,
+		Contract:  contractBytes,
 		Wallet:    msg.Wallet,
-		Signature: msg.Signature,
+		Signature: sigBytes,
 	})
 	jww.INFO.Printf("Registered commitment from %+v [%+v]", idfStruct.ID, msg.Wallet)
 	return nil

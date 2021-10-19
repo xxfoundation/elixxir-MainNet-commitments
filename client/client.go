@@ -8,6 +8,7 @@
 package client
 
 import (
+	"encoding/base64"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
 	"github.com/go-resty/resty/v2"
@@ -38,10 +39,10 @@ func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverCertPath,
 
 	// Build message body & post to server
 	body := messages.Commitment{
-		IDF:       idfBytes,
-		Contract:  contractBytes,
+		IDF:       base64.URLEncoding.EncodeToString(idfBytes),
+		Contract:  base64.URLEncoding.EncodeToString(contractBytes),
 		Wallet:    wallet,
-		Signature: sig,
+		Signature: base64.URLEncoding.EncodeToString(sig),
 	}
 	resp, err := cl.R().
 		SetHeader("Content-Type", "application/json").
