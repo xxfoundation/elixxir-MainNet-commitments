@@ -8,6 +8,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
@@ -15,13 +16,52 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/crypto/signature/rsa"
+	utils2 "gitlab.com/xx_network/primitives/utils"
 )
 
+func SignAndTransmit(keyPath, idfPath, contractPath, wallet, serverAddress, serverCertPath string) error {
+	var key, idfBytes, contractBytes []byte
+	var err error
+	var ep string
+
+	// Read key file
+	if ep, err = utils2.ExpandPath(keyPath); err == nil {
+		key, err = utils2.ReadFile(ep)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
+	// Read id file
+	if ep, err = utils2.ExpandPath(idfPath); err == nil {
+		idfBytes, err = utils2.ReadFile(ep)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
+	if ep, err = utils2.ExpandPath(contractPath); err == nil {
+		contractBytes, err = utils2.ReadFile(ep)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
+	return signAndTransmit(key, idfBytes, contractBytes, wallet, serverAddress, serverCertPath)
+}
+
 // SignAndTransmit creates a Client object & transmits commitment info to the server
-func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverCertPath, serverAddress string) error {
+func signAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverAddress, serverCertPath string) error {
 	// Create new resty client
 	cl := resty.New()
 	cl.SetRootCertificate(serverCertPath) // Set commitments root certificate
+	cl.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 	// Hash & sign node info
 	key, err := rsa.LoadPrivateKeyFromPem(pk)
@@ -48,8 +88,7 @@ func SignAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverCertPath,
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).
 		SetResult(messages.Commitment{}).
-		SetError(nil). // TODO: error response structure?
-		Post(serverAddress)
+		Post(serverAddress + "/commitment")
 
 	if err != nil {
 		return errors.WithMessagef(err, "Failed to register commitment, received response: %+v", resp)
