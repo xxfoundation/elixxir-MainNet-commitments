@@ -18,6 +18,7 @@ import (
 	"git.xx.network/elixxir/mainnet-commitments/messages"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
 	"git.xx.network/elixxir/mainnet-commitments/utils"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
@@ -26,6 +27,7 @@ import (
 	"gitlab.com/xx_network/primitives/id/idf"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // Params struct holds data needed to create a server Impl
@@ -49,6 +51,14 @@ func StartServer(params Params) error {
 
 	// Build gin server, link to verify code
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"POST"},
+		AllowHeaders:     []string{"Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 	r.POST("/commitment", func(c *gin.Context) {
 		jww.DEBUG.Printf("Received commitment request %+v...", c.Request)
 		var newCommitment messages.Commitment
@@ -67,7 +77,6 @@ func StartServer(params Params) error {
 			return
 		}
 		c.IndentedJSON(http.StatusAccepted, newCommitment)
-
 	})
 	impl.comms = r
 
