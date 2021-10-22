@@ -8,6 +8,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	gorsa "crypto/rsa"
 	"crypto/x509"
@@ -26,6 +27,7 @@ import (
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
+	utils2 "gitlab.com/xx_network/primitives/utils"
 	"net/http"
 	"testing"
 	"time"
@@ -35,6 +37,7 @@ import (
 type Params struct {
 	KeyPath       string
 	CertPath      string
+	ContractPath  string
 	Port          string
 	StorageParams storage.Params
 }
@@ -46,8 +49,19 @@ func StartServer(params Params) error {
 	if err != nil {
 		return err
 	}
+
+	cp, err := utils2.ExpandPath(params.ContractPath)
+	if err != nil {
+		return err
+	}
+	validContractBytes, err := utils2.ReadFile(cp)
+	if err != nil {
+		return err
+	}
+
 	impl := &Impl{
-		s: s,
+		s:        s,
+		contract: validContractBytes,
 	}
 
 	// Build gin server, link to verify code
@@ -87,8 +101,9 @@ func StartServer(params Params) error {
 
 // Impl struct stores protocomms & storage for server implementation
 type Impl struct {
-	comms *gin.Engine
-	s     *storage.Storage
+	comms    *gin.Engine
+	s        *storage.Storage
+	contract []byte
 }
 
 // Verify func is the main endpoint for the mainnet-commitments server
@@ -107,33 +122,9 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		jww.ERROR.Println(err)
 		return err
 	}
-
 	jww.INFO.Printf("Received verification request from %+v", idfStruct.ID)
 
-	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to validate wallet address")
-		jww.ERROR.Println(err)
-		return err
-	}
-	if !ok {
-		err = errors.New("Wallet validation returned false")
-		jww.ERROR.Println(err)
-		return err
-	}
-
-	// Hash node info from message
-	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to decode contract from base64")
-	}
-	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, idfBytes, contractBytes)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to hash node info")
-		jww.ERROR.Println(err)
-		return err
-	}
-
+	// Check hex node ID (betanet nodes don't have this)
 	if idfStruct.HexNodeID == "" {
 		nid, err := id.Unmarshal(idfStruct.IdBytes[:])
 		if err != nil {
@@ -154,6 +145,37 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		return err
 	}
 
+	// Load contract from request & compare to ours
+	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to decode contract from base64")
+	}
+	if bytes.Compare(contractBytes, i.contract) != 0 {
+		err = errors.Errorf("Contract received [%+v] did not match server contract [%+v]", contractBytes, i.contract)
+	}
+
+	// Validate wallet
+	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to validate wallet address")
+		jww.ERROR.Println(err)
+		return err
+	}
+	if !ok {
+		err = errors.New("Wallet validation returned false")
+		jww.ERROR.Println(err)
+		return err
+	}
+
+	// Hash node info from message
+	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, idfBytes, contractBytes)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to hash node info")
+		jww.ERROR.Println(err)
+		return err
+	}
+
+	// Decode certificate & extract public component
 	block, rest := pem.Decode(m.Cert)
 	jww.INFO.Printf("Decoded cert into block: %+v, rest: %+v", block, rest)
 	var cert *x509.Certificate
@@ -165,6 +187,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 	rsaPublicKey := cert.PublicKey.(*gorsa.PublicKey)
 
+	// Decode signature
 	sigBytes, err := base64.URLEncoding.DecodeString(msg.Signature)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to decode signature from base64")
