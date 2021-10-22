@@ -10,6 +10,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto"
 	gorsa "crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
@@ -58,10 +59,18 @@ func StartServer(params Params) error {
 	if err != nil {
 		return err
 	}
+	validContractBytes = validContractBytes[:len(validContractBytes)-1] // ReadFile seems to add a newline to the end...
+	jww.INFO.Println(string(validContractBytes))
+
+	h := crypto.BLAKE2b_512.New()
+	_, err = h.Write(validContractBytes)
+	if err != nil {
+		return err
+	}
 
 	impl := &Impl{
-		s:        s,
-		contract: validContractBytes,
+		s:            s,
+		contractHash: h.Sum(nil),
 	}
 
 	// Build gin server, link to verify code
@@ -101,9 +110,9 @@ func StartServer(params Params) error {
 
 // Impl struct stores protocomms & storage for server implementation
 type Impl struct {
-	comms    *gin.Engine
-	s        *storage.Storage
-	contract []byte
+	comms        *gin.Engine
+	s            *storage.Storage
+	contractHash []byte
 }
 
 // Verify func is the main endpoint for the mainnet-commitments server
@@ -124,6 +133,30 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 	jww.INFO.Printf("Received verification request from %+v", idfStruct.ID)
 
+	// Load contract from request & compare to ours
+	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to decode contract from base64")
+		return err
+	}
+	if bytes.Compare(contractBytes, i.contractHash) != 0 {
+		err = errors.Errorf("Contract hash received [%+v] did not match server contract hash [%+v]", contractBytes, i.contractHash)
+		return err
+	}
+
+	// Validate wallet
+	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to validate wallet address")
+		jww.ERROR.Println(err)
+		return err
+	}
+	if !ok {
+		err = errors.New("Wallet validation returned false")
+		jww.ERROR.Println(err)
+		return err
+	}
+
 	// Check hex node ID (betanet nodes don't have this)
 	if idfStruct.HexNodeID == "" {
 		nid, err := id.Unmarshal(idfStruct.IdBytes[:])
@@ -141,28 +174,6 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	m, err := i.s.GetMember(hexId)
 	if err != nil {
 		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
-		jww.ERROR.Println(err)
-		return err
-	}
-
-	// Load contract from request & compare to ours
-	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to decode contract from base64")
-	}
-	if bytes.Compare(contractBytes, i.contract) != 0 {
-		err = errors.Errorf("Contract received [%+v] did not match server contract [%+v]", contractBytes, i.contract)
-	}
-
-	// Validate wallet
-	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to validate wallet address")
-		jww.ERROR.Println(err)
-		return err
-	}
-	if !ok {
-		err = errors.New("Wallet validation returned false")
 		jww.ERROR.Println(err)
 		return err
 	}
