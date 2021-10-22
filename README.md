@@ -13,13 +13,32 @@ To compile the webassembly bindings use:
 
 ### Example config
 ```yaml
-keyPath: ""
-certPath: ""
-port: ""
+# ==================================
+# Commitments Server Configuration
+# ==================================
+
+# START YAML ===
+# Verbose logging
+logLevel: 1
+# Path to log file
+log: "/cmix/commitments.log"
 
 # Database connection information
-dbUsername: "cmix"
+dbUsername: ""
 dbPassword: ""
-dbName: "cmix_server"
-dbAddress: ""
+dbName: ""
+dbAddress: "0.0.0.0:5432"
+
+# Path to this server's private key file
+keyPath: "~/.elixxir/commitments.elixxir.io.key"
+# Path to this server's certificate file
+certPath: "~/.elixxir/commitments.elixxir.io.crt"
+# The listening port of this server
+port: 11420
+
+# Path to contract (for validation)
+contractPath: "~/.elixxir/contract.txt"
+
+# === END YAML
+
 ```
