@@ -8,7 +8,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"crypto"
 	gorsa "crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
@@ -24,7 +26,9 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/xx-labs/sleeve/wallet"
 	"gitlab.com/xx_network/crypto/signature/rsa"
+	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
+	utils2 "gitlab.com/xx_network/primitives/utils"
 	"net/http"
 	"testing"
 	"time"
@@ -34,6 +38,7 @@ import (
 type Params struct {
 	KeyPath       string
 	CertPath      string
+	ContractPath  string
 	Port          string
 	StorageParams storage.Params
 }
@@ -45,8 +50,27 @@ func StartServer(params Params) error {
 	if err != nil {
 		return err
 	}
+
+	cp, err := utils2.ExpandPath(params.ContractPath)
+	if err != nil {
+		return err
+	}
+	validContractBytes, err := utils2.ReadFile(cp)
+	if err != nil {
+		return err
+	}
+	validContractBytes = validContractBytes[:len(validContractBytes)-1] // ReadFile seems to add a newline to the end...
+	jww.INFO.Println(string(validContractBytes))
+
+	h := crypto.BLAKE2b_512.New()
+	_, err = h.Write(validContractBytes)
+	if err != nil {
+		return err
+	}
+
 	impl := &Impl{
-		s: s,
+		s:            s,
+		contractHash: h.Sum(nil),
 	}
 
 	// Build gin server, link to verify code
@@ -86,8 +110,9 @@ func StartServer(params Params) error {
 
 // Impl struct stores protocomms & storage for server implementation
 type Impl struct {
-	comms *gin.Engine
-	s     *storage.Storage
+	comms        *gin.Engine
+	s            *storage.Storage
+	contractHash []byte
 }
 
 // Verify func is the main endpoint for the mainnet-commitments server
@@ -106,9 +131,20 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		jww.ERROR.Println(err)
 		return err
 	}
-
 	jww.INFO.Printf("Received verification request from %+v", idfStruct.ID)
 
+	// Load contract from request & compare to ours
+	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to decode contract from base64")
+		return err
+	}
+	if bytes.Compare(contractBytes, i.contractHash) != 0 {
+		err = errors.Errorf("Contract hash received [%+v] did not match server contract hash [%+v]", contractBytes, i.contractHash)
+		return err
+	}
+
+	// Validate wallet
 	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to validate wallet address")
@@ -121,16 +157,16 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		return err
 	}
 
-	// Hash node info from message
-	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to decode contract from base64")
-	}
-	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, idfBytes, contractBytes)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to hash node info")
-		jww.ERROR.Println(err)
-		return err
+	// Check hex node ID (betanet nodes don't have this)
+	if idfStruct.HexNodeID == "" {
+		nid, err := id.Unmarshal(idfStruct.IdBytes[:])
+		if err != nil {
+			err = errors.WithMessage(err, "Failed to unmarshal ID")
+			jww.ERROR.Println(err)
+			return err
+		}
+
+		idfStruct.HexNodeID = nid.HexEncode()
 	}
 
 	// Get member info from database
@@ -142,6 +178,15 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		return err
 	}
 
+	// Hash node info from message
+	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, idfBytes, contractBytes)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to hash node info")
+		jww.ERROR.Println(err)
+		return err
+	}
+
+	// Decode certificate & extract public component
 	block, rest := pem.Decode(m.Cert)
 	jww.INFO.Printf("Decoded cert into block: %+v, rest: %+v", block, rest)
 	var cert *x509.Certificate
@@ -153,6 +198,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 	rsaPublicKey := cert.PublicKey.(*gorsa.PublicKey)
 
+	// Decode signature
 	sigBytes, err := base64.URLEncoding.DecodeString(msg.Signature)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to decode signature from base64")

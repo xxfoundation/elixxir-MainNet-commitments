@@ -69,6 +69,7 @@ var serverCmd = &cobra.Command{
 				Address:  addr,
 				Port:     port,
 			},
+			ContractPath: viper.GetString("contractPath"),
 		}
 		err = server.StartServer(params)
 		var stopCh = make(chan bool)
