@@ -24,6 +24,7 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/xx-labs/sleeve/wallet"
 	"gitlab.com/xx_network/crypto/signature/rsa"
+	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
 	"net/http"
 	"testing"
@@ -131,6 +132,17 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		err = errors.WithMessage(err, "Failed to hash node info")
 		jww.ERROR.Println(err)
 		return err
+	}
+
+	if idfStruct.HexNodeID == "" {
+		nid, err := id.Unmarshal(idfStruct.IdBytes[:])
+		if err != nil {
+			err = errors.WithMessage(err, "Failed to unmarshal ID")
+			jww.ERROR.Println(err)
+			return err
+		}
+
+		idfStruct.HexNodeID = nid.HexEncode()
 	}
 
 	// Get member info from database
