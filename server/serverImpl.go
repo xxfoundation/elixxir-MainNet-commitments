@@ -8,9 +8,7 @@
 package server
 
 import (
-	"bytes"
 	"context"
-	"crypto"
 	gorsa "crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
@@ -28,7 +26,6 @@ import (
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
-	utils2 "gitlab.com/xx_network/primitives/utils"
 	"net/http"
 	"testing"
 	"time"
@@ -38,7 +35,7 @@ import (
 type Params struct {
 	KeyPath       string
 	CertPath      string
-	ContractPath  string
+	ContractHash  string
 	Port          string
 	StorageParams storage.Params
 }
@@ -51,26 +48,9 @@ func StartServer(params Params) error {
 		return err
 	}
 
-	cp, err := utils2.ExpandPath(params.ContractPath)
-	if err != nil {
-		return err
-	}
-	validContractBytes, err := utils2.ReadFile(cp)
-	if err != nil {
-		return err
-	}
-	validContractBytes = validContractBytes[:len(validContractBytes)-1] // ReadFile seems to add a newline to the end...
-	jww.INFO.Println(string(validContractBytes))
-
-	h := crypto.BLAKE2b_512.New()
-	_, err = h.Write(validContractBytes)
-	if err != nil {
-		return err
-	}
-
 	impl := &Impl{
 		s:            s,
-		contractHash: h.Sum(nil),
+		contractHash: params.ContractHash,
 	}
 
 	// Build gin server, link to verify code
@@ -112,7 +92,7 @@ func StartServer(params Params) error {
 type Impl struct {
 	comms        *gin.Engine
 	s            *storage.Storage
-	contractHash []byte
+	contractHash string
 }
 
 // Verify func is the main endpoint for the mainnet-commitments server
@@ -133,15 +113,8 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 	jww.INFO.Printf("Received verification request from %+v", idfStruct.ID)
 
-	// Load contract from request & compare to ours
-	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to decode contract from base64")
-		return err
-	}
-	if bytes.Compare(contractBytes, i.contractHash) != 0 {
-		err = errors.Errorf("Contract hash received [%+v] did not match server contract hash [%+v]", contractBytes, i.contractHash)
-		return err
+	if msg.Contract != i.contractHash {
+		jww.ERROR.Printf("Contract hash received [%+v] does not match valid hash on server [%+v]", msg.Contract, i.contractHash)
 	}
 
 	// Validate wallet
@@ -176,6 +149,11 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
 		jww.ERROR.Println(err)
 		return err
+	}
+
+	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to decode contract hash from base64")
 	}
 
 	// Hash node info from message

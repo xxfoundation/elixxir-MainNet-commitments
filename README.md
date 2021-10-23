@@ -36,8 +36,8 @@ certPath: "~/.elixxir/commitments.elixxir.io.crt"
 # The listening port of this server
 port: 11420
 
-# Path to contract (for validation)
-contractPath: "~/.elixxir/contract.txt"
+# Hash of valid contract
+contractHash: "bcMp4W4W3Gd1rO56QUt54Cfr_AEBQbkIcxMIRH1PJqh8mXnCYM4bIdjHdMRjD2r-lrewwPVBIsHYeXT6Knopwg=="
 
 # === END YAML
 
