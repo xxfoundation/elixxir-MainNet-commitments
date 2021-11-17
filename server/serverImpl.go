@@ -131,19 +131,17 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Check hex node ID (betanet nodes don't have this)
-	if idfStruct.HexNodeID == "" {
-		nid, err := id.Unmarshal(idfStruct.IdBytes[:])
-		if err != nil {
-			err = errors.WithMessage(err, "Failed to unmarshal ID")
-			jww.ERROR.Println(err)
-			return err
-		}
-
-		idfStruct.HexNodeID = nid.HexEncode()
+	nid, err := id.Unmarshal(idfStruct.IdBytes[:])
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to unmarshal ID")
+		jww.ERROR.Println(err)
+		return err
 	}
 
+	hexNodeID := nid.HexEncode()
+
 	// Get member info from database
-	hexId := "\\" + idfStruct.HexNodeID[1:]
+	hexId := "\\" + hexNodeID[1:]
 	m, err := i.s.GetMember(hexId)
 	if err != nil {
 		err = errors.WithMessagef(err, "Member %s [%+v] not found", idfStruct.ID, idfStruct.IdBytes)
