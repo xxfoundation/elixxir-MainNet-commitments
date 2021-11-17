@@ -206,6 +206,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		jww.ERROR.Println(err)
 		return err
 	}
+
 	jww.INFO.Printf("Registered commitment from %+v [%+v]", idfStruct.ID, msg.Wallet)
 	return nil
 }
