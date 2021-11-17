@@ -114,7 +114,9 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	jww.INFO.Printf("Received verification request from %+v", idfStruct.ID)
 
 	if msg.Contract != i.contractHash {
-		jww.ERROR.Printf("Contract hash received [%+v] does not match valid hash on server [%+v]", msg.Contract, i.contractHash)
+		err = errors.Errorf("Contract hash received [%+v] does not match valid hash on server [%+v]", msg.Contract, i.contractHash)
+		jww.ERROR.Println(err)
+		return err
 	}
 
 	// Validate wallet
@@ -152,6 +154,8 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	contractBytes, err := base64.URLEncoding.DecodeString(msg.Contract)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to decode contract hash from base64")
+		jww.ERROR.Println(err)
+		return err
 	}
 
 	// Hash node info from message
@@ -197,6 +201,11 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		Wallet:    msg.Wallet,
 		Signature: sigBytes,
 	})
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to insert commitment")
+		jww.ERROR.Println(err)
+		return err
+	}
 	jww.INFO.Printf("Registered commitment from %+v [%+v]", idfStruct.ID, msg.Wallet)
 	return nil
 }
