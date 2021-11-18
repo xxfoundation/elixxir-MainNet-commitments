@@ -35,8 +35,19 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	commitmentServerAddress := inputs[4].String()
 	commitmentsCertPath := inputs[5].String()
 
+	var commitmentsCert []byte
+	// Read key file
+	if ep, err = utils2.ExpandPath(commitmentsCertPath); err == nil {
+		commitmentsCert, err = utils2.ReadFile(ep)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
 	// Sign & transmit information
-	err := client.SignAndTransmit(keyPath, idfPath, contractPath, wallet, commitmentsCertPath, commitmentServerAddress)
+	err := client.SignAndTransmit(keyPath, idfPath, contractPath, wallet, string(commitmentsCert), commitmentServerAddress)
 	if err != nil {
 		return map[string]interface{}{"Error": err.Error()}
 	}
