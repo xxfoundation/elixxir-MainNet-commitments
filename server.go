@@ -10,8 +10,9 @@
 
 package main
 
-import "git.xx.network/elixxir/mainnet-commitments/cmd"
-
-func main() {
-	cmd.ExecuteServer()
-}
+//
+//import "git.xx.network/elixxir/mainnet-commitments/cmd"
+//
+//func main() {
+//	cmd.ExecuteServer()
+//}
