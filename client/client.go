@@ -8,6 +8,7 @@
 package client
 
 import (
+	"crypto"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
@@ -349,16 +350,21 @@ func SignAndTransmit(keyPath, idfPath, wallet, serverAddress, serverCert string)
 
 	fmt.Println(contract)
 	fmt.Println("Do you accept the contract as it has been laid out? (y/n)")
+	h := crypto.BLAKE2b_512.New()
+	_, err = h.Write([]byte(contract))
+	if err != nil {
+		return errors.WithMessage(err, "Failed to write contract to hash")
+	}
 	var accept string
 	_, err = fmt.Scanln(&accept)
 	if err != nil {
 		return err
 	}
-	if strings.ToUpper(accept) != "Y" || strings.ToUpper(accept) != "YES" {
+	if !(strings.ToUpper(accept) == "Y" || strings.ToUpper(accept) == "YES") {
 		return errors.New("Please accept the contract")
 	}
 
-	return signAndTransmit(key, idfBytes, []byte(contract), wallet, serverAddress, serverCert)
+	return signAndTransmit(key, idfBytes, h.Sum(nil), wallet, serverAddress, serverCert)
 }
 
 // SignAndTransmit creates a Client object & transmits commitment info to the server
@@ -395,8 +401,9 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverAddress, 
 		SetResult(messages.Commitment{}).
 		Post(serverAddress + "/commitment")
 
-	if err != nil {
+	if err != nil || resp.IsError() {
 		return errors.WithMessagef(err, "Failed to register commitment, received response: %+v", resp)
 	}
+
 	return nil
 }
