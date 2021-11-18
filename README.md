@@ -1,5 +1,10 @@
 # MainNet commitments
 
+### Client usage
+```
+./client.binary -k ../wrapper/creds/1/cmix-key.key -i ../wrapper/creds/1/cmix-IDF.json -w "WALLET HERE"
+```
+
 ### Build instructions
 The makefile contains three targets for default builds
 To build server binaries, use either of the following:
