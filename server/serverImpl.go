@@ -33,21 +33,14 @@ import (
 
 // Params struct holds data needed to create a server Impl
 type Params struct {
-	KeyPath       string
-	CertPath      string
-	ContractHash  string
-	Port          string
-	StorageParams storage.Params
+	KeyPath      string
+	CertPath     string
+	ContractHash string
+	Port         string
 }
 
 // StartServer creates a server object from params
-func StartServer(params Params) error {
-	// initialize storage
-	s, err := storage.NewStorage(params.StorageParams)
-	if err != nil {
-		return err
-	}
-
+func StartServer(params Params, s *storage.Storage) error {
 	impl := &Impl{
 		s:            s,
 		contractHash: params.ContractHash,
@@ -68,24 +61,28 @@ func StartServer(params Params) error {
 		var newCommitment messages.Commitment
 		if err := c.BindJSON(&newCommitment); err != nil {
 			jww.INFO.Printf("Failed to bind JSON: %+v", err)
-			_ = c.Error(err)
-			c.Status(http.StatusBadRequest)
+			wrappedErr := c.Error(err)
+			c.JSON(http.StatusBadRequest, wrappedErr.JSON())
 			return
 		}
 		jww.INFO.Printf("Received commitment request %+v", newCommitment)
 		err := impl.Verify(c, newCommitment)
 		if err != nil {
 			jww.INFO.Printf("Failed to verify commitment: %+v", err)
-			_ = c.Error(err)
-			c.Status(http.StatusForbidden)
+			wrappedErr := c.Error(err)
+			c.JSON(http.StatusForbidden, wrappedErr.JSON())
 			return
 		}
-		c.IndentedJSON(http.StatusAccepted, newCommitment)
+		c.JSON(http.StatusAccepted, newCommitment)
 	})
 	impl.comms = r
-
 	// Run with TLS
-	return r.RunTLS(fmt.Sprintf("0.0.0.0:%s", params.Port), params.CertPath, params.KeyPath)
+	if params.KeyPath == "" && params.CertPath == "" {
+		jww.WARN.Println("NO TLS CONFIGURED")
+		return r.Run(fmt.Sprintf("0.0.0.0:%s", params.Port))
+	} else {
+		return r.RunTLS(fmt.Sprintf("0.0.0.0:%s", params.Port), params.CertPath, params.KeyPath)
+	}
 }
 
 // Impl struct stores protocomms & storage for server implementation
@@ -119,15 +116,27 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		return err
 	}
 
-	// Validate wallet
-	ok, err := wallet.ValidateXXNetworkAddress(msg.Wallet)
+	// Validate wallets
+	ok, err := wallet.ValidateXXNetworkAddress(msg.NominatorWallet)
 	if err != nil {
-		err = errors.WithMessage(err, "Failed to validate wallet address")
+		err = errors.WithMessage(err, "Failed to validate nominator wallet address")
 		jww.ERROR.Println(err)
 		return err
 	}
 	if !ok {
-		err = errors.New("Wallet validation returned false")
+		err = errors.New("Nominator wallet validation returned false")
+		jww.ERROR.Println(err)
+		return err
+	}
+
+	ok, err = wallet.ValidateXXNetworkAddress(msg.ValidatorWallet)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to validate validator wallet address")
+		jww.ERROR.Println(err)
+		return err
+	}
+	if !ok {
+		err = errors.New("Validator wallet validation returned false")
 		jww.ERROR.Println(err)
 		return err
 	}
@@ -159,7 +168,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Hash node info from message
-	hashed, hash, err := utils.HashNodeInfo(msg.Wallet, idfBytes, contractBytes)
+	hashed, hash, err := utils.HashNodeInfo(msg.NominatorWallet, msg.ValidatorWallet, idfBytes, contractBytes)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to hash node info")
 		jww.ERROR.Println(err)
@@ -196,10 +205,12 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 
 	// Insert commitment info to the database once verified
 	err = i.s.InsertCommitment(storage.Commitment{
-		Id:        m.Id,
-		Contract:  contractBytes,
-		Wallet:    msg.Wallet,
-		Signature: sigBytes,
+		Id:              m.Id,
+		Contract:        contractBytes,
+		Wallet:          "LEGACY",
+		NominatorWallet: msg.NominatorWallet,
+		ValidatorWallet: msg.ValidatorWallet,
+		Signature:       sigBytes,
 	})
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to insert commitment")
@@ -207,7 +218,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		return err
 	}
 
-	jww.INFO.Printf("Registered commitment from %+v [%+v]", idfStruct.ID, msg.Wallet)
+	jww.INFO.Printf("Registered commitment from %+v [Nominator: %+s, Validator: %s]", idfStruct.ID, msg.NominatorWallet, msg.ValidatorWallet)
 	return nil
 }
 

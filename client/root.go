@@ -9,12 +9,14 @@ package client
 
 import (
 	"fmt"
+	"git.xx.network/elixxir/mainnet-commitments/utils"
 	"github.com/spf13/cobra"
 	jww "github.com/spf13/jwalterweatherman"
 	"os"
+	"strings"
 )
 
-var logPath, keyPath, idfPath, wallet string
+var logPath, keyPath, idfPath, nominatorWallet, validatorWallet string
 
 // ExecuteServer adds all child commands to the root command and sets flags
 // appropriately.  This is called by server.main(). It only needs to
@@ -68,9 +70,21 @@ xHKP3P00TnJNiOMRn94MY2GdUl8pAi8I89n9jPZfa0ANCpyfHluw+lNUfJNrGvwO
 Mu7/deeXg4hfNzQoWdZnBhzgaB05MAbJI6E=
 -----END CERTIFICATE-----`
 
-		err := SignAndTransmit(keyPath, idfPath, wallet, address, commitmentCert)
+		fmt.Println(utils.Contract)
+		fmt.Println("Do you accept the contract as it has been laid out? (y/n)")
+
+		var accept string
+		_, err := fmt.Scanln(&accept)
 		if err != nil {
-			jww.ERROR.Println(err)
+			jww.FATAL.Fatalf("Failed to read contract acceptance: %+v", err)
+		}
+		if !(strings.ToUpper(accept) == "Y" || strings.ToUpper(accept) == "YES") {
+			jww.FATAL.Fatalf("You must accept the contract to continue")
+		}
+
+		err = SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, address, commitmentCert, utils.Contract)
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to sign & transmit commitment: %+v", err)
 		}
 	},
 }
@@ -90,7 +104,9 @@ func init() {
 		"", "Sets a custom key file path")
 	clientCmd.Flags().StringVarP(&idfPath, "idfPath", "i",
 		"", "Sets a custom id file path")
-	clientCmd.Flags().StringVarP(&wallet, "wallet", "w",
+	clientCmd.Flags().StringVarP(&nominatorWallet, "nominatorWallet", "n",
+		"", "Sets a custom wallet")
+	clientCmd.Flags().StringVarP(&validatorWallet, "validatorWallet", "v",
 		"", "Sets a custom wallet")
 }
 

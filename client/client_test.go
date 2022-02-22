@@ -8,70 +8,132 @@
 package client
 
 import (
-	"git.xx.network/elixxir/mainnet-commitments/messages"
+	"crypto/rand"
+	gorsa "crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/json"
+	"encoding/pem"
 	"git.xx.network/elixxir/mainnet-commitments/server"
 	"git.xx.network/elixxir/mainnet-commitments/storage"
-	"gitlab.com/xx_network/comms/connect"
+	"github.com/xx-labs/sleeve/wallet"
+	"gitlab.com/xx_network/crypto/csprng"
+	"gitlab.com/xx_network/crypto/signature/rsa"
+	"gitlab.com/xx_network/primitives/id"
+	"gitlab.com/xx_network/primitives/id/idf"
+	"math/big"
+	"os"
 	"testing"
+	"time"
 )
 
-type MockSender struct {
-	t        *testing.T
-	id, cert []byte
-}
-
-func (ms *MockSender) TransmitSignature(host *connect.Host, message messages.Commitment) error {
-	s, err := storage.NewStorage(storage.Params{})
+func TestSignAndTransmit(t *testing.T) {
+	pk, err := rsa.GenerateKey(csprng.NewSystemRNG(), 2048)
 	if err != nil {
-		ms.t.Error("Failed to init storage for mock server")
+		t.Errorf("Failed to gen key: %+v", err)
 	}
-	err = s.InsertMembers([]storage.Member{{
-		Id:   ms.id,
-		Cert: ms.cert,
+	nid := id.NewIdFromString("zezima", id.Node, t)
+	idb := [33]byte{}
+	copy(idb[:], nid.Marshal())
+	idFile := idf.IdFile{
+		ID:        nid.String(),
+		Type:      nid.GetType().String(),
+		Salt:      [32]byte{},
+		IdBytes:   idb,
+		HexNodeID: nid.HexEncode(),
+	}
+	idfBytes, err := json.Marshal(idFile)
+	if err != nil {
+		t.Errorf("Failed to marshal IDF: %+v", err)
+	}
+
+	s, err := wallet.NewSleeve(rand.Reader, "password")
+	if err != nil {
+		t.Errorf("Failed to create sleeve: %+v", err)
+	}
+	waddr := wallet.XXNetworkAddressFromMnemonic(s.GetOutputMnemonic())
+	waddr2 := wallet.XXNetworkAddressFromMnemonic(s.GetMnemonic())
+
+	testKeyPath := "/tmp/commitmenttestkey.key"
+	testIDFPath := "/tmp/testidf.json"
+	err = os.WriteFile(testKeyPath, rsa.CreatePrivateKeyPem(pk), os.ModePerm)
+	if err != nil {
+		t.Errorf("Failed to write test key: %+v", err)
+	}
+	err = os.WriteFile(testIDFPath, idfBytes, os.ModePerm)
+	if err != nil {
+		t.Errorf("Failed to write test idf: %+v", err)
+	}
+
+	certBytes, err := makeCert(&pk.PrivateKey)
+	if err != nil {
+		t.Errorf("Failed to create test cert: %+v", err)
+	}
+
+	mapImpl, err := storage.NewStorage(storage.Params{})
+	if err != nil {
+		t.Error("Failed to init storage for mock server")
+	}
+	err = mapImpl.InsertMembers([]storage.Member{{
+		Id:   nid.Bytes(),
+		Cert: certBytes,
 	},
 	})
 	if err != nil {
-		ms.t.Errorf("Failed to insert members: %+v", err)
+		t.Errorf("Failed to insert members: %+v", err)
 	}
-	impl := server.Impl{}
-	impl.SetStorage(ms.t, s)
-	err = impl.Verify(nil, message)
+
+	var errChan = make(chan error)
+	var doneChan = make(chan bool)
+
+	go func() {
+		err := server.StartServer(server.Params{
+			KeyPath:      "",
+			CertPath:     "",
+			ContractHash: "eGoC90IBWQPGxv2FJVLScpEvR0DhWEdhiobiF_cfVBnSXhAxr-5YUxOJZESTTrBLkDpoWxRIt1XVb3Aa_pvizg==",
+			Port:         "11420",
+		}, mapImpl)
+		if err != nil {
+			t.Errorf("Failed to start dummy server")
+			errChan <- err
+		} else {
+			doneChan <- true
+		}
+	}()
+	time.Sleep(time.Millisecond * 100)
+
+	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, waddr2, "http://localhost:11420", "", "")
 	if err != nil {
-		ms.t.Errorf("Failed to verify: %+v", err)
+		t.Errorf("Failed to sign & transmit: %+v", err)
 	}
-	return nil
 }
 
-//
-//func TestSignAndTransmit(t *testing.T) {
-//	pk, err := rsa.GenerateKey(csprng.NewSystemRNG(), 2048)
-//	if err != nil {
-//		t.Errorf("Failed to gen key: %+v", err)
-//	}
-//	nid := id.NewIdFromString("zezima", id.Node, t)
-//	idb := [33]byte{}
-//	copy(idb[:], nid.Marshal())
-//	idFile := idf.IdFile{
-//		ID:        nid.String(),
-//		Type:      nid.GetType().String(),
-//		Salt:      [32]byte{},
-//		IdBytes:   idb,
-//		HexNodeID: nid.HexEncode(),
-//	}
-//	idfBytes, err := json.Marshal(idFile)
-//	if err != nil {
-//		t.Errorf("Failed to marshal IDF: %+v", err)
-//	}
-//
-//	s, err := wallet.NewSleeve(rand.Reader, "password")
-//	if err != nil {
-//		t.Errorf("Failed to create sleeve: %+v", err)
-//	}
-//	waddr := wallet.XXNetworkAddressFromMnemonic(s.GetOutputMnemonic())
-//
-//	contractBytes := []byte("I solemnly swear that I am up to no good")
-//	err = SignAndTransmit(rsa.CreatePrivateKeyPem(pk), idfBytes, contractBytes, waddr, nil, &MockSender{t, nid.Bytes(), rsa.CreatePublicKeyPem(pk.GetPublic())})
-//	if err != nil {
-//		t.Errorf("Failed to sign & transmit: %+v", err)
-//	}
-//}
+func makeCert(pk *gorsa.PrivateKey) ([]byte, error) {
+	ca := &x509.Certificate{
+		SerialNumber: big.NewInt(2019),
+		Subject: pkix.Name{
+			Organization:  []string{"Company, INC."},
+			Country:       []string{"US"},
+			Province:      []string{""},
+			Locality:      []string{"San Francisco"},
+			StreetAddress: []string{"Golden Gate Bridge"},
+			PostalCode:    []string{"94016"},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(10, 0, 0),
+		IsCA:                  true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+	}
+	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &pk.PublicKey, pk)
+	if err != nil {
+		return nil, err
+	}
+	block := &pem.Block{
+		Type:    "",
+		Headers: nil,
+		Bytes:   caBytes,
+	}
+	return pem.EncodeToMemory(block), nil
+}

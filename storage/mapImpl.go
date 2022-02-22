@@ -9,6 +9,7 @@ package storage
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	"sync"
 )
@@ -39,7 +40,13 @@ func (db *MapImpl) InsertCommitment(commitment Commitment) error {
 func (db *MapImpl) GetMember(id string) (*Member, error) {
 	db.RLock()
 	defer db.RUnlock()
-	modified := base64.StdEncoding.EncodeToString([]byte(id))
+	var raw = make([]byte, 33)
+	_, err := hex.Decode(raw, []byte(id[2:]))
+	if err != nil {
+		return nil, err
+	}
+	raw[32] = byte(02)
+	modified := base64.StdEncoding.EncodeToString(raw)
 	m, ok := db.members[modified]
 	if !ok {
 		return nil, errors.Errorf("No member in MapImpl with id %+v", id)

@@ -12,6 +12,10 @@ To build server binaries, use either of the following:
 `make linux_server`
 `make mac_server`
 
+To build the CLI binary use:
+`make cli_client_mac`
+`make cli_client_linux`
+
 To compile the webassembly bindings use:
 
 `make client`

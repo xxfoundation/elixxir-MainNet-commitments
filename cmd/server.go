@@ -59,19 +59,27 @@ var serverCmd = &cobra.Command{
 		}
 
 		params := server.Params{
-			KeyPath:  keyPath,
-			CertPath: certPath,
-			Port:     viper.GetString("port"),
-			StorageParams: storage.Params{
-				Username: viper.GetString("dbUsername"),
-				Password: viper.GetString("dbPassword"),
-				DBName:   viper.GetString("dbName"),
-				Address:  addr,
-				Port:     port,
-			},
+			KeyPath:      keyPath,
+			CertPath:     certPath,
+			Port:         viper.GetString("port"),
 			ContractHash: viper.GetString("contractHash"),
 		}
-		err = server.StartServer(params)
+
+		storageParams := storage.Params{
+			Username: viper.GetString("dbUsername"),
+			Password: viper.GetString("dbPassword"),
+			DBName:   viper.GetString("dbName"),
+			Address:  addr,
+			Port:     port,
+		}
+
+		// initialize storage
+		s, err := storage.NewStorage(storageParams)
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to init storage: %+v", err)
+		}
+
+		err = server.StartServer(params, s)
 		var stopCh = make(chan bool)
 		select {
 		case <-stopCh:
