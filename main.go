@@ -31,10 +31,9 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	keyPath := inputs[0].String()
 	idfPath := inputs[1].String()
 	contractPath := inputs[2].String()
-	nominatorWallet := inputs[3].String()
-	validatorWallet := inputs[4].String()
-	commitmentServerAddress := inputs[5].String()
-	commitmentsCertPath := inputs[6].String()
+	paymentWallet := inputs[3].String()
+	commitmentServerAddress := inputs[4].String()
+	commitmentsCertPath := inputs[5].String()
 
 	var commitmentsCert []byte
 	// Read key file
@@ -48,7 +47,7 @@ func SignAndTransmit(this js.Value, inputs []js.Value) interface{} {
 	}
 
 	// Sign & transmit information
-	err := client.SignAndTransmit(keyPath, idfPath, contractPath, nominatorWallet, validatorWallet, string(commitmentsCert), commitmentServerAddress, utils.Contract)
+	err := client.SignAndTransmit(keyPath, idfPath, contractPath, paymentWallet, string(commitmentsCert), commitmentServerAddress, utils.Contract)
 	if err != nil {
 		return map[string]interface{}{"Error": err.Error()}
 	}

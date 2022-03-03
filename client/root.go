@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-var logPath, keyPath, idfPath, nominatorWallet, validatorWallet string
+var logPath, keyPath, idfPath, paymentWallet string
 
 // ExecuteServer adds all child commands to the root command and sets flags
 // appropriately.  This is called by server.main(). It only needs to
@@ -82,7 +82,7 @@ Mu7/deeXg4hfNzQoWdZnBhzgaB05MAbJI6E=
 			jww.FATAL.Fatalf("You must accept the contract to continue")
 		}
 
-		err = SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, address, commitmentCert, utils.Contract)
+		err = SignAndTransmit(keyPath, idfPath, paymentWallet, address, commitmentCert, utils.Contract)
 		if err != nil {
 			jww.FATAL.Fatalf("Failed to sign & transmit commitment: %+v", err)
 		}
@@ -104,9 +104,7 @@ func init() {
 		"", "Sets a custom key file path")
 	clientCmd.Flags().StringVarP(&idfPath, "idfPath", "i",
 		"", "Sets a custom id file path")
-	clientCmd.Flags().StringVarP(&nominatorWallet, "nominatorWallet", "n",
-		"", "Sets a custom wallet")
-	clientCmd.Flags().StringVarP(&validatorWallet, "validatorWallet", "v",
+	clientCmd.Flags().StringVarP(&paymentWallet, "paymentWallet", "n",
 		"", "Sets a custom wallet")
 }
 

@@ -117,26 +117,14 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Validate wallets
-	ok, err := wallet.ValidateXXNetworkAddress(msg.NominatorWallet)
+	ok, err := wallet.ValidateXXNetworkAddress(msg.PaymentWallet)
 	if err != nil {
-		err = errors.WithMessage(err, "Failed to validate nominator wallet address")
+		err = errors.WithMessage(err, "Failed to validate payment wallet address")
 		jww.ERROR.Println(err)
 		return err
 	}
 	if !ok {
-		err = errors.New("Nominator wallet validation returned false")
-		jww.ERROR.Println(err)
-		return err
-	}
-
-	ok, err = wallet.ValidateXXNetworkAddress(msg.ValidatorWallet)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to validate validator wallet address")
-		jww.ERROR.Println(err)
-		return err
-	}
-	if !ok {
-		err = errors.New("Validator wallet validation returned false")
+		err = errors.New("Payment wallet validation returned false")
 		jww.ERROR.Println(err)
 		return err
 	}
@@ -168,7 +156,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Hash node info from message
-	hashed, hash, err := utils.HashNodeInfo(msg.NominatorWallet, msg.ValidatorWallet, idfBytes, contractBytes)
+	hashed, hash, err := utils.HashNodeInfo(msg.PaymentWallet, idfBytes, contractBytes)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to hash node info")
 		jww.ERROR.Println(err)
@@ -205,12 +193,10 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 
 	// Insert commitment info to the database once verified
 	err = i.s.InsertCommitment(storage.Commitment{
-		Id:              m.Id,
-		Contract:        contractBytes,
-		Wallet:          "LEGACY",
-		NominatorWallet: msg.NominatorWallet,
-		ValidatorWallet: msg.ValidatorWallet,
-		Signature:       sigBytes,
+		Id:        m.Id,
+		Contract:  contractBytes,
+		Wallet:    msg.PaymentWallet,
+		Signature: sigBytes,
 	})
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to insert commitment")
@@ -218,7 +204,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		return err
 	}
 
-	jww.INFO.Printf("Registered commitment from %+v [Nominator: %+s, Validator: %s]", idfStruct.ID, msg.NominatorWallet, msg.ValidatorWallet)
+	jww.INFO.Printf("Registered commitment from %+v [Nominator: %+s, Validator: %s]", idfStruct.ID, msg.PaymentWallet)
 	return nil
 }
 

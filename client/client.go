@@ -20,7 +20,7 @@ import (
 	utils2 "gitlab.com/xx_network/primitives/utils"
 )
 
-func SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, serverAddress, serverCert, contract string) error {
+func SignAndTransmit(keyPath, idfPath, paymentWallet, serverAddress, serverCert, contract string) error {
 	var key, idfBytes []byte
 	var err error
 	var ep string
@@ -51,11 +51,11 @@ func SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, serverA
 		return errors.WithMessage(err, "Failed to write contract to hash")
 	}
 
-	return signAndTransmit(key, idfBytes, h.Sum(nil), nominatorWallet, validatorWallet, serverAddress, serverCert)
+	return signAndTransmit(key, idfBytes, h.Sum(nil), paymentWallet, serverAddress, serverCert)
 }
 
 // SignAndTransmit creates a Client object & transmits commitment info to the server
-func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, validatorWallet, serverAddress, serverCert string) error {
+func signAndTransmit(pk, idfBytes, contractBytes []byte, paymentWallet, serverAddress, serverCert string) error {
 	// Create new resty client
 	cl := resty.New()
 	cl.SetRootCertificateFromString(serverCert)
@@ -66,7 +66,7 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, valida
 	if err != nil {
 		return errors.WithMessage(err, "Failed to load private key")
 	}
-	hashed, hash, err := utils.HashNodeInfo(nominatorWallet, validatorWallet, idfBytes, contractBytes)
+	hashed, hash, err := utils.HashNodeInfo(paymentWallet, idfBytes, contractBytes)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to hash node info")
 	}
@@ -77,11 +77,10 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, valida
 
 	// Build message body & post to server
 	body := messages.Commitment{
-		IDF:             base64.URLEncoding.EncodeToString(idfBytes),
-		Contract:        base64.URLEncoding.EncodeToString(contractBytes),
-		NominatorWallet: nominatorWallet,
-		ValidatorWallet: validatorWallet,
-		Signature:       base64.URLEncoding.EncodeToString(sig),
+		IDF:           base64.URLEncoding.EncodeToString(idfBytes),
+		Contract:      base64.URLEncoding.EncodeToString(contractBytes),
+		PaymentWallet: paymentWallet,
+		Signature:     base64.URLEncoding.EncodeToString(sig),
 	}
 	resp, err := cl.R().
 		SetHeader("Content-Type", "application/json").

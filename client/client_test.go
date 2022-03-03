@@ -52,7 +52,6 @@ func TestSignAndTransmit(t *testing.T) {
 		t.Errorf("Failed to create sleeve: %+v", err)
 	}
 	waddr := wallet.XXNetworkAddressFromMnemonic(s.GetOutputMnemonic())
-	waddr2 := wallet.XXNetworkAddressFromMnemonic(s.GetMnemonic())
 
 	testKeyPath := "/tmp/commitmenttestkey.key"
 	testIDFPath := "/tmp/testidf.json"
@@ -102,7 +101,7 @@ func TestSignAndTransmit(t *testing.T) {
 	}()
 	time.Sleep(time.Millisecond * 100)
 
-	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, waddr2, "http://localhost:11420", "", "")
+	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, "http://localhost:11420", "", "")
 	if err != nil {
 		t.Errorf("Failed to sign & transmit: %+v", err)
 	}
