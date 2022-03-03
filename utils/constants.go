@@ -13,8 +13,7 @@ var ServerID = id.ID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 var Contract = `<style>
-    div.agreement p, div.agreement a, div.agreement strong, div.agreement u,
-    div.agreement ol, div.agreement li {
+    div.agreement p, div.agreement a, div.agreement strong, div.agreement ol, div.agreement li {
         margin: 0;
         padding: 0;
         border: 0;
@@ -35,10 +34,6 @@ var Contract = `<style>
 
     div.agreement strong {
         font-weight: 700;
-    }
-
-    div.agreement u {
-        text-decoration: underline;
     }
 
     div.agreement ol {
@@ -152,8 +147,7 @@ var Contract = `<style>
 </div>`
 
 const NovemberContract = `<style>
-    div.agreement p, div.agreement a, div.agreement strong, div.agreement u,
-    div.agreement ol, div.agreement li {
+    div.agreement p, div.agreement a, div.agreement strong, div.agreement ol, div.agreement li {
         margin: 0;
         padding: 0;
         border: 0;
@@ -174,10 +168,6 @@ const NovemberContract = `<style>
 
     div.agreement strong {
         font-weight: 700;
-    }
-
-    div.agreement u {
-        text-decoration: underline;
     }
 
     div.agreement ol {
@@ -228,7 +218,7 @@ const NovemberContract = `<style>
 	<p><strong>About this Agreement</strong>. These Terms and Conditions for MainNet Support Reimbursement (this “<strong>Agreement</strong>”) constitute a legally binding agreement between you (the “<strong>Node Operator</strong>” or “<strong>You</strong>” or derivatives thereof) and xx Labs SEZC, an entity incorporated under the laws of the Cayman Islands (“<strong>Company</strong>”) and governs your relationship with the Company. This Agreement supersedes and merges all prior oral and written agreements, discussions and understandings between you and the Company with respect to its subject matter, and neither of the parties will be bound by any conditions, inducements or representations other than as expressly provided for herein.</p>
 	<p><strong>About XX Network</strong>. The “<strong>xx network</strong>” is a quantum ready blockchain network designed to enable a scalable and private payments and messaging system. The xx network is a nominated proof-of-stake blockchain, with Node Operator and their nominators compensated with Coins for producing blocks and running the protocol.</p>
 	<p><strong>Node Operator</strong>. You, as the Node Operator, agree to operate one or more MainNet Nodes in the xx network and to be legally bound by this Agreement. You represent and warrant that you are at least 18 years old (or the age of majority as determined by the laws of your place of residency.</p>
-	<p><strong>Electronic Signature and Disclosure Consent Notice</strong>. You agree to the use of electronic documents and records in connection with participation in the xx network—including without limitation this electronic signature and disclosure notice—and that this use satisfies any requirement to provide you these documents and their content in writing.<strong>If You do not agree, do not accept this Agreement</strong>.</p>
+	<p><strong>Electronic Signature and Disclosure Consent Notice</strong>. You agree to the use of electronic documents and records in connection with participation in the xx network—including without limitation this electronic signature and disclosure notice—and that this use satisfies any requirement to provide you these documents and their content in writing. <strong>If You do not agree, do not accept this Agreement</strong>.</p>
 	<p><strong>Changes to this Agreement</strong>. The Company reserves the right to change this Agreement from time to time in our sole discretion. If the Company makes material changes to this Agreement, we will provide notice of such changes, such as by posting the revised Node Operator Terms and Conditions. By continuing to act as a Node Operator and hosting a MainNet Node, after the posted effective date of modifications to this Agreement, you agree to be bound by the revised version of the Agreement. If you do not agree to the modified Agreement, you must cease your hosting of a MainNet Node</p>
 	<ol type="1">
 		<li>
@@ -237,8 +227,8 @@ const NovemberContract = `<style>
 				<li><p>“<strong>Coin</strong>” means a digital coin (i.e., token) created by Company as a cryptographically secured representation of the right to exchange or use such coin or token as payment for applications or services.</p></li>
 				<li><p>“<strong>MainNet Launch Date</strong>” means November 17, 2021.</p></li>
 				<li><p>“<strong>MainNet Node</strong>” or “<strong>Node</strong>” means an active physical electronic device that runs the Node Software on the xx network mainnet.</p></li>
-				<li><p>“<strong>Node Hardware Requirements</strong>” means the minimum MainNet Node hardware and operating requirements posted at <a href="https://xx.network/mainnet-transition#mainnet-hardware-requirements"><span class="underline">https://xx.network/mainnet-transition#mainnet-hardware-requirements</span></a> and <a href="https://xxnetwork.wiki/index.php/Hardware_Requirements"><span class="underline">https://xxnetwork.wiki/index.php/Hardware_Requirements</span></a>, as such requirements may be changed by the Company from time to time, all of which are incorporated and made a part of this Agreement by this reference.</p></li>
-				<li><p>“<strong>Node Rules</strong>” means the rules for Node Operator in the xx network and use of the Coins, as such rules are posted on the xx network site, including at <a href="https://xx.network/mainnet-transition"><span class="underline">https://xx.network/mainnet-transition</span></a>, from time to time by the Company, all of which are incorporated and made a part of this Agreement by this reference.</p></li>
+				<li><p>“<strong>Node Hardware Requirements</strong>” means the minimum MainNet Node hardware and operating requirements posted at <a href="https://xx.network/mainnet-transition#mainnet-hardware-requirements" rel="noopener" target="_blank">https://xx.network/mainnet-transition#mainnet-hardware-requirements</a> and <a href="https://xxnetwork.wiki/index.php/Hardware_Requirements" rel="noopener" target="_blank">https://xxnetwork.wiki/index.php/Hardware_Requirements</a>, as such requirements may be changed by the Company from time to time, all of which are incorporated and made a part of this Agreement by this reference.</p></li>
+				<li><p>“<strong>Node Rules</strong>” means the rules for Node Operator in the xx network and use of the Coins, as such rules are posted on the xx network site, including at <a href="https://xx.network/mainnet-transition" rel="noopener" target="_blank">https://xx.network/mainnet-transition</a>, from time to time by the Company, all of which are incorporated and made a part of this Agreement by this reference.</p></li>
 				<li><p>“<strong>Node Software</strong>” means the software provided or otherwise made available by Company that creates, sends, receives, or transmits information to the xx network, runs the consensus algorithm of the xx network, and offers one or more applications or services supported by xx network.</p></li>
 			</ol>
 		</li>
