@@ -74,8 +74,9 @@ var serverCmd = &cobra.Command{
 		}
 
 		altRawAddr := viper.GetString("altDBAddress")
+		var altAddr, altPort string
 		if altRawAddr != "" {
-			addr, port, err = net.SplitHostPort(altRawAddr)
+			altAddr, altPort, err = net.SplitHostPort(altRawAddr)
 			if err != nil {
 				jww.FATAL.Panicf("Unable to get alt database port from %s: %+v", altRawAddr, err)
 			}
@@ -85,8 +86,8 @@ var serverCmd = &cobra.Command{
 			Username: viper.GetString("altDBUsername"),
 			Password: viper.GetString("altDBPassword"),
 			DBName:   viper.GetString("altDBName"),
-			Address:  addr,
-			Port:     port,
+			Address:  altAddr,
+			Port:     altPort,
 		}
 
 		// initialize storage

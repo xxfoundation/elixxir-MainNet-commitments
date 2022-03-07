@@ -69,7 +69,7 @@ func newDatabase(username, password, dbName, address,
 
 		altConnectString := fmt.Sprintf(
 			"host=%s port=%s user=%s dbname=%s sslmode=disable",
-			altParams.Address, &altParams.Port, altParams.Username, altParams.DBName)
+			altParams.Address, altParams.Port, altParams.Username, altParams.DBName)
 		altDB, altErr = gorm.Open(postgres.Open(altConnectString), &gorm.Config{
 			Logger: logger.New(jww.TRACE, logger.Config{LogLevel: logger.Info}),
 		})
@@ -83,7 +83,7 @@ func newDatabase(username, password, dbName, address,
 			failReason = fmt.Sprintf("Unable to initialize database backend: %+v", err)
 			jww.WARN.Printf(failReason)
 		} else if altErr != nil {
-			failReason = fmt.Sprintf("Unable to initialize alt database backend: %+v", err)
+			failReason = fmt.Sprintf("Unable to initialize alt database backend: %+v", altErr)
 			jww.WARN.Printf(failReason)
 		} else {
 			failReason = "Database backend connection information not provided"
