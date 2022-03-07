@@ -82,6 +82,9 @@ func newDatabase(username, password, dbName, address,
 		if err != nil {
 			failReason = fmt.Sprintf("Unable to initialize database backend: %+v", err)
 			jww.WARN.Printf(failReason)
+		} else if altErr != nil {
+			failReason = fmt.Sprintf("Unable to initialize alt database backend: %+v", err)
+			jww.WARN.Printf(failReason)
 		} else {
 			failReason = "Database backend connection information not provided"
 			jww.WARN.Printf(failReason)
