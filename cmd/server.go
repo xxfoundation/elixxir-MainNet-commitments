@@ -77,7 +77,7 @@ var serverCmd = &cobra.Command{
 		if altRawAddr != "" {
 			addr, port, err = net.SplitHostPort(altRawAddr)
 			if err != nil {
-				jww.FATAL.Panicf("Unable to get database port from %s: %+v", altRawAddr, err)
+				jww.FATAL.Panicf("Unable to get alt database port from %s: %+v", altRawAddr, err)
 			}
 		}
 
