@@ -38,6 +38,12 @@ dbPassword: ""
 dbName: ""
 dbAddress: "0.0.0.0:5432"
 
+# alt Database connection information
+altDBUsername: ""
+altDBPassword: ""
+altDBName: ""
+altDBAddress: "0.0.0.0:5432"
+
 # Path to this server's private key file
 keyPath: "~/.elixxir/commitments.elixxir.io.key"
 # Path to this server's certificate file

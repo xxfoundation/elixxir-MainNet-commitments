@@ -49,14 +49,6 @@ var serverCmd = &cobra.Command{
 		if err != nil {
 			jww.FATAL.Fatalf("Failed to expand key path: %+v", err)
 		}
-		rawAddr := viper.GetString("dbAddress")
-		var addr, port string
-		if rawAddr != "" {
-			addr, port, err = net.SplitHostPort(rawAddr)
-			if err != nil {
-				jww.FATAL.Panicf("Unable to get database port from %s: %+v", rawAddr, err)
-			}
-		}
 
 		params := server.Params{
 			KeyPath:      keyPath,
@@ -65,6 +57,14 @@ var serverCmd = &cobra.Command{
 			ContractHash: viper.GetString("contractHash"),
 		}
 
+		rawAddr := viper.GetString("dbAddress")
+		var addr, port string
+		if rawAddr != "" {
+			addr, port, err = net.SplitHostPort(rawAddr)
+			if err != nil {
+				jww.FATAL.Panicf("Unable to get database port from %s: %+v", rawAddr, err)
+			}
+		}
 		storageParams := storage.Params{
 			Username: viper.GetString("dbUsername"),
 			Password: viper.GetString("dbPassword"),
@@ -73,8 +73,24 @@ var serverCmd = &cobra.Command{
 			Port:     port,
 		}
 
+		altRawAddr := viper.GetString("altDBAddress")
+		if rawAddr != "" {
+			addr, port, err = net.SplitHostPort(altRawAddr)
+			if err != nil {
+				jww.FATAL.Panicf("Unable to get database port from %s: %+v", rawAddr, err)
+			}
+		}
+
+		altStorageParams := storage.Params{
+			Username: viper.GetString("altDBUsername"),
+			Password: viper.GetString("altDBPassword"),
+			DBName:   viper.GetString("altDBName"),
+			Address:  addr,
+			Port:     port,
+		}
+
 		// initialize storage
-		s, err := storage.NewStorage(storageParams)
+		s, err := storage.NewStorage(storageParams, altStorageParams)
 		if err != nil {
 			jww.FATAL.Fatalf("Failed to init storage: %+v", err)
 		}

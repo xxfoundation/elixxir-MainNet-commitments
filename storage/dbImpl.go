@@ -25,3 +25,10 @@ func (db *DatabaseImpl) GetMember(id string) (*Member, error) {
 	m := Member{}
 	return &m, db.db.First(&m, "id = ?", id).Error
 }
+
+func (db *DatabaseImpl) CheckWallet(wallet string) (bool, error) {
+	raw := "SELECT COUNT(*) FROM commitments WHERE wallet LIKE ?;"
+	var res int
+	err := db.alt.Raw(raw, wallet).Scan(&res).Error
+	return res == 0, err
+}

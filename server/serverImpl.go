@@ -191,6 +191,19 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		return err
 	}
 
+	// Check if wallet is in old commitments
+	ok, err = i.s.CheckWallet(msg.PaymentWallet)
+	if err != nil {
+		err = errors.WithMessage(err, "Failed to check wallet status in old commitments")
+		jww.ERROR.Println(err)
+		return err
+	}
+	if !ok {
+		err = errors.Errorf("Cannot add wallet %s: wallet already used in the old commitments system", msg.PaymentWallet)
+		jww.ERROR.Println(err)
+		return err
+	}
+
 	// Insert commitment info to the database once verified
 	err = i.s.InsertCommitment(storage.Commitment{
 		Id:        m.Id,

@@ -22,11 +22,14 @@ type database interface {
 	InsertCommitment(Commitment) error
 
 	GetMember(hexID string) (*Member, error)
+
+	CheckWallet(wallet string) (bool, error)
 }
 
 // DatabaseImpl struct implements the Database Interface with an underlying DB
 type DatabaseImpl struct {
-	db *gorm.DB // Stored database connection
+	db  *gorm.DB // Stored database connection
+	alt *gorm.DB
 }
 
 type Member struct {
@@ -46,12 +49,12 @@ type Commitment struct {
 // newDatabase initializes the database interface with either Database or Map backend
 // Returns a database interface and error
 func newDatabase(username, password, dbName, address,
-	port string) (database, error) {
+	port string, altParams Params) (database, error) {
 
-	var err error
-	var db *gorm.DB
+	var err, altErr error
+	var db, altDB *gorm.DB
 	// Connect to the database if the correct information is provided
-	if address != "" && port != "" {
+	if address != "" && port != "" && altParams.Address != "" && altParams.Port != "" {
 		// Create the database connection
 		connectString := fmt.Sprintf(
 			"host=%s port=%s user=%s dbname=%s sslmode=disable",
@@ -63,12 +66,18 @@ func newDatabase(username, password, dbName, address,
 		db, err = gorm.Open(postgres.Open(connectString), &gorm.Config{
 			Logger: logger.New(jww.TRACE, logger.Config{LogLevel: logger.Info}),
 		})
+
+		altConnectString := fmt.Sprintf(
+			"host=%s port=%s user=%s dbname=%s sslmode=disable",
+			altParams.Address, &altParams.Port, altParams.Username, altParams.DBName)
+		altDB, altErr = gorm.Open(postgres.Open(altConnectString), &gorm.Config{
+			Logger: logger.New(jww.TRACE, logger.Config{LogLevel: logger.Info}),
+		})
 	}
 
 	// Return the map-backend interface
 	// in the event there is a database error or information is not provided
-	if (address == "" || port == "") || err != nil {
-
+	if (address == "" || port == "" || altParams.Address == "" || altParams.Port == "") || err != nil || altErr != nil {
 		var failReason string
 		if err != nil {
 			failReason = fmt.Sprintf("Unable to initialize database backend: %+v", err)
@@ -81,8 +90,9 @@ func newDatabase(username, password, dbName, address,
 		defer jww.INFO.Println("Map backend initialized successfully!")
 
 		mapImpl := &MapImpl{
-			members:     map[string]Member{},
-			commitments: map[string]Commitment{},
+			members:        map[string]Member{},
+			commitments:    map[string]Commitment{},
+			altCommitments: map[string]string{},
 		}
 
 		return database(mapImpl), nil
@@ -114,7 +124,8 @@ func newDatabase(username, password, dbName, address,
 
 	// Build the interface
 	di := &DatabaseImpl{
-		db: db,
+		db:  db,
+		alt: altDB,
 	}
 
 	jww.INFO.Println("Database backend initialized successfully!")

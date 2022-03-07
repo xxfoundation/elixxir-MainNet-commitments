@@ -16,8 +16,9 @@ import (
 
 // MapImpl struct implements the database interface with an underlying Map
 type MapImpl struct {
-	members     map[string]Member
-	commitments map[string]Commitment
+	members        map[string]Member
+	commitments    map[string]Commitment
+	altCommitments map[string]string
 	sync.RWMutex
 }
 
@@ -52,4 +53,9 @@ func (db *MapImpl) GetMember(id string) (*Member, error) {
 		return nil, errors.Errorf("No member in MapImpl with id %+v", id)
 	}
 	return &m, nil
+}
+
+func (db *MapImpl) CheckWallet(wallet string) (bool, error) {
+	_, ok := db.altCommitments[wallet]
+	return !ok, nil
 }
