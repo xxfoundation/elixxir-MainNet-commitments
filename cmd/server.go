@@ -74,10 +74,10 @@ var serverCmd = &cobra.Command{
 		}
 
 		altRawAddr := viper.GetString("altDBAddress")
-		if rawAddr != "" {
+		if altRawAddr != "" {
 			addr, port, err = net.SplitHostPort(altRawAddr)
 			if err != nil {
-				jww.FATAL.Panicf("Unable to get database port from %s: %+v", rawAddr, err)
+				jww.FATAL.Panicf("Unable to get database port from %s: %+v", altRawAddr, err)
 			}
 		}
 
