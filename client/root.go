@@ -35,7 +35,7 @@ var clientCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		initLog()
-		address := "https://18.185.229.39:11420"
+		address := "https://3.71.253.147:11420"
 		commitmentCert := `-----BEGIN CERTIFICATE-----
 MIIFtjCCA56gAwIBAgIJAI0i//hCyk8BMA0GCSqGSIb3DQEBCwUAMIGMMQswCQYD
 VQQGEwJVUzELMAkGA1UECAwCQ0ExEjAQBgNVBAcMCUNsYXJlbW9udDEQMA4GA1UE
@@ -70,7 +70,7 @@ xHKP3P00TnJNiOMRn94MY2GdUl8pAi8I89n9jPZfa0ANCpyfHluw+lNUfJNrGvwO
 Mu7/deeXg4hfNzQoWdZnBhzgaB05MAbJI6E=
 -----END CERTIFICATE-----`
 
-		fmt.Println(utils.Contract)
+		fmt.Println(utils.NovemberContract)
 		fmt.Println("Do you accept the contract as it has been laid out? (y/n)")
 
 		var accept string
@@ -78,6 +78,7 @@ Mu7/deeXg4hfNzQoWdZnBhzgaB05MAbJI6E=
 		if err != nil {
 			jww.FATAL.Fatalf("Failed to read contract acceptance: %+v", err)
 		}
+
 		if !(strings.ToUpper(accept) == "Y" || strings.ToUpper(accept) == "YES") {
 			jww.FATAL.Fatalf("You must accept the contract to continue")
 		}
