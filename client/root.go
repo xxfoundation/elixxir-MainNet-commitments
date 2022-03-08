@@ -30,8 +30,8 @@ func ExecuteClient() {
 
 // serverCmd starts a server for mainnet-commitments
 var clientCmd = &cobra.Command{
-	Use:   "mainnet-commitments-client",
-	Short: "Main command for mainnet-commitments client",
+	Use:   "november-commitments-client",
+	Short: "Main command for november-commitments client",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		initLog()
@@ -105,7 +105,7 @@ func init() {
 		"", "Sets a custom key file path")
 	clientCmd.Flags().StringVarP(&idfPath, "idfPath", "i",
 		"", "Sets a custom id file path")
-	clientCmd.Flags().StringVarP(&paymentWallet, "paymentWallet", "n",
+	clientCmd.Flags().StringVarP(&paymentWallet, "paymentWallet", "w",
 		"", "Sets a custom wallet")
 }
 
