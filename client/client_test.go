@@ -69,7 +69,7 @@ func TestSignAndTransmit(t *testing.T) {
 		t.Errorf("Failed to create test cert: %+v", err)
 	}
 
-	mapImpl, err := storage.NewStorage(storage.Params{})
+	mapImpl, err := storage.NewStorage(storage.Params{}, "", "")
 	if err != nil {
 		t.Error("Failed to init storage for mock server")
 	}

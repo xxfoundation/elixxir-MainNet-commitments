@@ -26,7 +26,7 @@ func setup(t *testing.T) (*Storage, error) {
 		Port:     "5432",
 	}
 
-	return NewStorage(p)
+	return NewStorage(p, "0.0.0.0", "5432")
 }
 
 func TestDatabase(t *testing.T) {

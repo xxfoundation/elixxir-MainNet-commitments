@@ -217,7 +217,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		return err
 	}
 
-	jww.INFO.Printf("Registered commitment from %+v [Nominator: %+s, Validator: %s]", idfStruct.ID, msg.PaymentWallet)
+	jww.INFO.Printf("Registered commitment from %+v [Wallet: %s]", idfStruct.ID, msg.PaymentWallet)
 	return nil
 }
 

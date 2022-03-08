@@ -49,12 +49,12 @@ type Commitment struct {
 // newDatabase initializes the database interface with either Database or Map backend
 // Returns a database interface and error
 func newDatabase(username, password, dbName, address,
-	port string, altParams Params) (database, error) {
+	port, altHost, altPort string) (database, error) {
 
 	var err, altErr error
 	var db, altDB *gorm.DB
 	// Connect to the database if the correct information is provided
-	if address != "" && port != "" && altParams.Address != "" && altParams.Port != "" {
+	if address != "" && port != "" && altHost != "" && altPort != "" {
 		// Create the database connection
 		connectString := fmt.Sprintf(
 			"host=%s port=%s user=%s dbname=%s sslmode=disable",
@@ -69,7 +69,10 @@ func newDatabase(username, password, dbName, address,
 
 		altConnectString := fmt.Sprintf(
 			"host=%s port=%s user=%s dbname=%s sslmode=disable",
-			altParams.Address, altParams.Port, altParams.Username, altParams.DBName)
+			altHost, altPort, username, dbName)
+		if len(password) > 0 {
+			altConnectString += fmt.Sprintf(" password=%s", password)
+		}
 		altDB, altErr = gorm.Open(postgres.Open(altConnectString), &gorm.Config{
 			Logger: logger.New(jww.TRACE, logger.Config{LogLevel: logger.Info}),
 		})
@@ -77,7 +80,7 @@ func newDatabase(username, password, dbName, address,
 
 	// Return the map-backend interface
 	// in the event there is a database error or information is not provided
-	if (address == "" || port == "" || altParams.Address == "" || altParams.Port == "") || err != nil || altErr != nil {
+	if (address == "" || port == "" || altHost == "" || altPort == "") || err != nil || altErr != nil {
 		var failReason string
 		if err != nil {
 			failReason = fmt.Sprintf("Unable to initialize database backend: %+v", err)

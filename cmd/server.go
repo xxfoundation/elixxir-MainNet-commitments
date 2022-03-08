@@ -82,16 +82,8 @@ var serverCmd = &cobra.Command{
 			}
 		}
 
-		altStorageParams := storage.Params{
-			Username: viper.GetString("altDBUsername"),
-			Password: viper.GetString("altDBPassword"),
-			DBName:   viper.GetString("altDBName"),
-			Address:  altAddr,
-			Port:     altPort,
-		}
-
 		// initialize storage
-		s, err := storage.NewStorage(storageParams, altStorageParams)
+		s, err := storage.NewStorage(storageParams, altAddr, altPort)
 		if err != nil {
 			jww.FATAL.Fatalf("Failed to init storage: %+v", err)
 		}
