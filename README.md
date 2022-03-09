@@ -54,6 +54,7 @@ port: 11420
 # Hash of valid contract
 contractHash: "bcMp4W4W3Gd1rO56QUt54Cfr_AEBQbkIcxMIRH1PJqh8mXnCYM4bIdjHdMRjD2r-lrewwPVBIsHYeXT6Knopwg=="
 
+idListPath: "/tmp/idList.csv"
 # === END YAML
 
 ```
