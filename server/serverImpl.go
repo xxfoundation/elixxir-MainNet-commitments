@@ -28,7 +28,7 @@ import (
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
-	utils2 "gitlab.com/xx_network/primitives/utils"
+	pathutils "gitlab.com/xx_network/primitives/utils"
 	"net/http"
 	"testing"
 	"time"
@@ -51,15 +51,17 @@ func StartServer(params Params, s *storage.Storage) error {
 		idList:       map[string]interface{}{},
 	}
 
-	if p, err := utils2.ExpandPath(params.IDListPath); err == nil {
-		idList, err := utils2.ReadFile(p)
+	// Attempt to load in list of node IDs exempt from duplicate wallet checking
+	if p, err := pathutils.ExpandPath(params.IDListPath); err == nil {
+		idList, err := pathutils.ReadFile(p)
 		if err != nil {
 			return errors.WithMessage(err, "Failed to read ID list path")
 		}
 		r := csv.NewReader(bytes.NewReader(idList))
 		records, err := r.ReadAll()
 		for _, r := range records {
-			impl.idList[r[0]] = true
+			nid := r[0]
+			impl.idList[nid] = true
 		}
 	} else {
 		return errors.WithMessage(err, "Failed to expand ID list path")
@@ -212,6 +214,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Check if wallet is in old commitments
+	// Only check this if node ID is not in exempt list
 	if _, ok := i.idList[nid.String()]; !ok {
 		ok, err = i.s.CheckWallet(msg.PaymentWallet)
 		if err != nil {
