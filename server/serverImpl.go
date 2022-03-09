@@ -8,10 +8,12 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	gorsa "crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -26,6 +28,7 @@ import (
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
+	utils2 "gitlab.com/xx_network/primitives/utils"
 	"net/http"
 	"testing"
 	"time"
@@ -37,6 +40,7 @@ type Params struct {
 	CertPath     string
 	ContractHash string
 	Port         string
+	IDListPath   string
 }
 
 // StartServer creates a server object from params
@@ -44,6 +48,21 @@ func StartServer(params Params, s *storage.Storage) error {
 	impl := &Impl{
 		s:            s,
 		contractHash: params.ContractHash,
+		idList:       map[string]interface{}{},
+	}
+
+	if p, err := utils2.ExpandPath(params.IDListPath); err == nil {
+		idList, err := utils2.ReadFile(p)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to read ID list path")
+		}
+		r := csv.NewReader(bytes.NewReader(idList))
+		records, err := r.ReadAll()
+		for _, r := range records {
+			impl.idList[r[0]] = true
+		}
+	} else {
+		return errors.WithMessage(err, "Failed to expand ID list path")
 	}
 
 	// Build gin server, link to verify code
@@ -90,6 +109,7 @@ type Impl struct {
 	comms        *gin.Engine
 	s            *storage.Storage
 	contractHash string
+	idList       map[string]interface{}
 }
 
 // Verify func is the main endpoint for the mainnet-commitments server
@@ -192,16 +212,18 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Check if wallet is in old commitments
-	ok, err = i.s.CheckWallet(msg.PaymentWallet)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to check wallet status in old commitments")
-		jww.ERROR.Println(err)
-		return err
-	}
-	if !ok {
-		err = errors.Errorf("Cannot add wallet %s: wallet already used in the old commitments system", msg.PaymentWallet)
-		jww.ERROR.Println(err)
-		return err
+	if _, ok := i.idList[nid.String()]; !ok {
+		ok, err = i.s.CheckWallet(msg.PaymentWallet)
+		if err != nil {
+			err = errors.WithMessage(err, "Failed to check wallet status in old commitments")
+			jww.ERROR.Println(err)
+			return err
+		}
+		if !ok {
+			err = errors.Errorf("Cannot add wallet %s: wallet already used in the old commitments system", msg.PaymentWallet)
+			jww.ERROR.Println(err)
+			return err
+		}
 	}
 
 	// Insert commitment info to the database once verified

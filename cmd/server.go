@@ -53,6 +53,7 @@ var serverCmd = &cobra.Command{
 		params := server.Params{
 			KeyPath:      keyPath,
 			CertPath:     certPath,
+			IDListPath:   viper.GetString("idListPath"),
 			Port:         viper.GetString("port"),
 			ContractHash: viper.GetString("contractHash"),
 		}
