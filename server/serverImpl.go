@@ -52,19 +52,21 @@ func StartServer(params Params, s *storage.Storage) error {
 	}
 
 	// Attempt to load in list of node IDs exempt from duplicate wallet checking
-	if p, err := pathutils.ExpandPath(params.IDListPath); err == nil {
-		idList, err := pathutils.ReadFile(p)
-		if err != nil {
-			return errors.WithMessage(err, "Failed to read ID list path")
+	if params.IDListPath != "" {
+		if p, err := pathutils.ExpandPath(params.IDListPath); err == nil {
+			idList, err := pathutils.ReadFile(p)
+			if err != nil {
+				return errors.WithMessage(err, "Failed to read ID list path")
+			}
+			r := csv.NewReader(bytes.NewReader(idList))
+			records, err := r.ReadAll()
+			for _, r := range records {
+				nid := r[0]
+				impl.idList[nid] = true
+			}
+		} else {
+			return errors.WithMessage(err, "Failed to expand ID list path")
 		}
-		r := csv.NewReader(bytes.NewReader(idList))
-		records, err := r.ReadAll()
-		for _, r := range records {
-			nid := r[0]
-			impl.idList[nid] = true
-		}
-	} else {
-		return errors.WithMessage(err, "Failed to expand ID list path")
 	}
 
 	// Build gin server, link to verify code
@@ -97,7 +99,9 @@ func StartServer(params Params, s *storage.Storage) error {
 		c.JSON(http.StatusAccepted, newCommitment)
 	})
 	impl.comms = r
+
 	// Run with TLS
+	jww.INFO.Print("Starting commitments server...")
 	if params.KeyPath == "" && params.CertPath == "" {
 		jww.WARN.Println("NO TLS CONFIGURED")
 		return r.Run(fmt.Sprintf("0.0.0.0:%s", params.Port))

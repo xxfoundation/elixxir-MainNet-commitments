@@ -90,6 +90,9 @@ var serverCmd = &cobra.Command{
 		}
 
 		err = server.StartServer(params, s)
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to start server: %+v", err)
+		}
 		var stopCh = make(chan bool)
 		select {
 		case <-stopCh:

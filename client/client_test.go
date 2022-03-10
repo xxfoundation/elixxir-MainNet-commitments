@@ -93,7 +93,7 @@ func TestSignAndTransmit(t *testing.T) {
 			Port:         "11420",
 		}, mapImpl)
 		if err != nil {
-			t.Errorf("Failed to start dummy server")
+			t.Errorf("Failed to start dummy server: %+v", err)
 			errChan <- err
 		} else {
 			doneChan <- true
