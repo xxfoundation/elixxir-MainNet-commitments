@@ -117,6 +117,10 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Validate wallets
+	if msg.NominatorWallet == msg.ValidatorWallet {
+		return errors.New("Nominator wallet and validator wallet cannot be the same")
+	}
+
 	if msg.NominatorWallet != "" {
 		ok, err := wallet.ValidateXXNetworkAddress(msg.NominatorWallet)
 		if err != nil {
@@ -179,8 +183,7 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Decode certificate & extract public component
-	block, rest := pem.Decode(m.Cert)
-	jww.INFO.Printf("Decoded cert into block: %+v, rest: %+v", block, rest)
+	block, _ := pem.Decode(m.Cert)
 	var cert *x509.Certificate
 	cert, err = x509.ParseCertificate(block.Bytes)
 	if err != nil {
