@@ -36,18 +36,18 @@ func TestDatabase(t *testing.T) {
 	}
 	id1 := id.NewIdFromString("zezimaone", id.Node, t)
 	m1 := Member{
-		Id:   []byte(id1.HexEncode()),
+		Id:   id1.Bytes(),
 		Cert: []byte("cert1"),
 	}
 	m2 := Member{
-		Id:   []byte(id.NewIdFromString("zezimatwo", id.Node, t).HexEncode()),
+		Id:   id.NewIdFromString("zezimatwo", id.Node, t).Bytes(),
 		Cert: []byte("cert2"),
 	}
 	err = s.InsertMembers([]Member{m1, m2})
 	if err != nil {
 		t.Errorf("Failed to insert members: %+v", err)
 	}
-	rm, err := s.GetMember(id1.HexEncode())
+	rm, err := s.GetMember("\\" + id1.HexEncode()[1:])
 	if err != nil {
 		t.Errorf("Failed to get member: %+v", err)
 	}

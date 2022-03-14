@@ -204,14 +204,16 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Insert commitment info to the database once verified
-	err = i.s.InsertCommitment(storage.Commitment{
-		Id:              m.Id,
-		Contract:        contractBytes,
-		Wallet:          "LEGACY",
-		NominatorWallet: msg.NominatorWallet,
-		ValidatorWallet: msg.ValidatorWallet,
-		Signature:       sigBytes,
-	})
+	c := storage.Commitment{
+		Id:        m.Id,
+		Contract:  contractBytes,
+		Wallet:    msg.ValidatorWallet,
+		Signature: sigBytes,
+	}
+	if msg.NominatorWallet != "" {
+		c.NominatorWallet = msg.NominatorWallet
+	}
+	err = i.s.InsertCommitment(c)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to insert commitment")
 		jww.ERROR.Println(err)
