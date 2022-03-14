@@ -2,7 +2,7 @@
 
 ### Client usage
 ```
-./client.binary -k ../wrapper/creds/1/cmix-key.key -i ../wrapper/creds/1/cmix-IDF.json -w "WALLET HERE"
+./client.binary -k ../wrapper/creds/1/cmix-key.key -i ../wrapper/creds/1/cmix-IDF.json -n "NOMINATOR WALLET" -v "VALIDATOR WALLET"
 ```
 
 ### Build instructions
