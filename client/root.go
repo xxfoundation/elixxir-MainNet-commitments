@@ -9,12 +9,14 @@ package client
 
 import (
 	"fmt"
+	"git.xx.network/elixxir/mainnet-commitments/utils"
 	"github.com/spf13/cobra"
 	jww "github.com/spf13/jwalterweatherman"
 	"os"
+	"strings"
 )
 
-var logPath, keyPath, idfPath, contractPath, wallet string
+var logPath, keyPath, idfPath, nominatorWallet, validatorWallet string
 
 // ExecuteServer adds all child commands to the root command and sets flags
 // appropriately.  This is called by server.main(). It only needs to
@@ -33,10 +35,56 @@ var clientCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		initLog()
+		address := "https://18.185.229.39:11420"
+		commitmentCert := `-----BEGIN CERTIFICATE-----
+MIIFtjCCA56gAwIBAgIJAI0i//hCyk8BMA0GCSqGSIb3DQEBCwUAMIGMMQswCQYD
+VQQGEwJVUzELMAkGA1UECAwCQ0ExEjAQBgNVBAcMCUNsYXJlbW9udDEQMA4GA1UE
+CgwHRWxpeHhpcjEUMBIGA1UECwwLRGV2ZWxvcG1lbnQxEzARBgNVBAMMCmVsaXh4
+aXIuaW8xHzAdBgkqhkiG9w0BCQEWEGFkbWluQGVsaXh4aXIuaW8wHhcNMjExMDA2
+MTczNDIxWhcNMjMxMDA2MTczNDIxWjCBjDELMAkGA1UEBhMCVVMxCzAJBgNVBAgM
+AkNBMRIwEAYDVQQHDAlDbGFyZW1vbnQxEDAOBgNVBAoMB0VsaXh4aXIxFDASBgNV
+BAsMC0RldmVsb3BtZW50MRMwEQYDVQQDDAplbGl4eGlyLmlvMR8wHQYJKoZIhvcN
+AQkBFhBhZG1pbkBlbGl4eGlyLmlvMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIIC
+CgKCAgEAqLpFWmIfM+RJuCEnCjCMcEImmoQeMWCg/XFk5U9M5/hjwvK6la4nroKl
+Gaue48d49gQJy8349LoOLN3zxQNj3wavv9Y1u+VkgExF2NQR0NBqbYAuaUAYK2LD
+JTWeR5xXoWrLkMP3L+ZMqSOgcrH9ZvrsR8seLaExSYTp/MyodlBfHG7+RQ7fr92p
+bnoU8c4D6l78Mn9okht3m5t+oHtAhNBJegsGbvqbhwO+Wyrs2Hw6Uq0xM3KeeP9Z
+UfT0uz3HxfX2cuL/ApjUXXJ9Dli2vm0LmKur9JjRQV1IUeh+fkScEewmPhk0vbkI
+BGq+ck5gq3oiTV0CUkL2eF8YEFHtJ9dtAX6mSNJD9Dvf8tWB5GkTb5x7XOR58dc9
+TWH9Nd3HEF3tskbNLLdcAvI9LKW4K3lls2XkVnVXmu/4C9LWChC6vmNBjXcchCvn
+PKI6ByHiZZ7Cz90Hmto/Cyg1o+26DUKfHoKm14QyPpDeNAz0RKuemBuNYKzREAOX
+ItWjrlbSmM+dVhJPOi1EnZxUoUrXPdnG61ec80VbZZX9MQIvmyp7w3+bcE6PnnfZ
+Nk7M8n4L4AM46JZ53y1XavdylrzglrQj0IT+Os//XEU3eVqlzi3U57KuWl0zJ/4F
+uPUZWmYdzUIikIK+NHiNwHPOzf6CgDqDzadkFVAUZiHfxGomDPcCAwEAAaMZMBcw
+FQYDVR0RBA4wDIIKZWxpeHhpci5pbzANBgkqhkiG9w0BAQsFAAOCAgEAHbQMj4oN
+NrwZMBEkaW8abnpT8Es9fHScfqAiFHpzjO9+Q5/Y5XtL92MO0+czQ2QhtaRd/mja
+9IikKgSBf6x2oMdWYvm/sMVTlvgnr7GznGeS8JWMh73XJH9gwASZEuTTXEkAVy6u
+J5KEvZqlU1/O7LRNA/seW/LVPL2UxJzNbTcXnmw4AEARZzXMcdL7gUnmf8/gzxh5
+ikCoOOnhSQJPHbb6sDaxdDKRzwphacR03WZnQt3ShVoF+F7ffNmyQ27lEHD/r7HC
+aOtEum/vqr8mCvCEasPxuxhI+G1lEXoTyA3AB2HaQSF6sXzsC/aQKgAx66oUP4mk
+WV+EKijj6Gb2h9J6THEv6Ym9SUlUacnujdjrcnJHTyTTyvz8Oj63Olwi1TzLRVqs
++KNSk3ZyyhutiiktIZO1jUKQPNkYunxVryPYYmPHnrledLIShF/j+C/5VsRxzd/4
+4vyz5CHFo4HaxPbkLdYuVQ9NzOux3eh8wF1nwADXh7RJUAQVNge2s5shrnznZ7TO
+XBqrZq75vkMpNxz+YFfu8J9DgZZOehUOBgyA3hlA9FdFFslPuzo6SxzfKaWjSTPZ
+xHKP3P00TnJNiOMRn94MY2GdUl8pAi8I89n9jPZfa0ANCpyfHluw+lNUfJNrGvwO
+Mu7/deeXg4hfNzQoWdZnBhzgaB05MAbJI6E=
+-----END CERTIFICATE-----`
 
-		err := SignAndTransmit(keyPath, idfPath, contractPath, wallet, "https://35.81.172.71:11420", "/Users/jonahhusson/gitlab.com/elixxir/deployment/scripts/commitments/commitments.release.elixxir.io.crt")
+		fmt.Println(utils.Contract)
+		fmt.Println("Do you accept the contract as it has been laid out? (y/n)")
+
+		var accept string
+		_, err := fmt.Scanln(&accept)
 		if err != nil {
-			jww.ERROR.Println(err)
+			jww.FATAL.Fatalf("Failed to read contract acceptance: %+v", err)
+		}
+		if !(strings.ToUpper(accept) == "Y" || strings.ToUpper(accept) == "YES") {
+			jww.FATAL.Fatalf("You must accept the contract to continue")
+		}
+
+		err = SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, address, commitmentCert, utils.Contract)
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to sign & transmit commitment: %+v", err)
 		}
 	},
 }
@@ -56,9 +104,9 @@ func init() {
 		"", "Sets a custom key file path")
 	clientCmd.Flags().StringVarP(&idfPath, "idfPath", "i",
 		"", "Sets a custom id file path")
-	clientCmd.Flags().StringVarP(&contractPath, "contract", "c",
-		"", "Sets a custom contract file path")
-	clientCmd.Flags().StringVarP(&wallet, "wallet", "w",
+	clientCmd.Flags().StringVarP(&nominatorWallet, "nominatorWallet", "n",
+		"", "Sets a custom wallet")
+	clientCmd.Flags().StringVarP(&validatorWallet, "validatorWallet", "v",
 		"", "Sets a custom wallet")
 }
 

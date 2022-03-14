@@ -9,6 +9,8 @@
 
 package storage
 
+import "testing"
+
 type Params struct {
 	Username string
 	Password string
@@ -29,4 +31,11 @@ func NewStorage(params Params) (*Storage, error) {
 	db, err := newDatabase(params.Username, params.Password, params.DBName, params.Address, params.Port)
 	storage := &Storage{db}
 	return storage, err
+}
+
+func (s *Storage) GetMapImpl(t *testing.T) *MapImpl {
+	if t == nil {
+		return nil
+	}
+	return s.database.(*MapImpl)
 }

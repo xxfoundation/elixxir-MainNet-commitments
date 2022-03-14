@@ -8,6 +8,7 @@
 package client
 
 import (
+	"crypto"
 	"crypto/tls"
 	"encoding/base64"
 	"git.xx.network/elixxir/mainnet-commitments/messages"
@@ -19,8 +20,8 @@ import (
 	utils2 "gitlab.com/xx_network/primitives/utils"
 )
 
-func SignAndTransmit(keyPath, idfPath, contractPath, wallet, serverAddress, serverCertPath string) error {
-	var key, idfBytes, contractBytes []byte
+func SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, serverAddress, serverCert, contract string) error {
+	var key, idfBytes []byte
 	var err error
 	var ep string
 
@@ -44,23 +45,20 @@ func SignAndTransmit(keyPath, idfPath, contractPath, wallet, serverAddress, serv
 		return err
 	}
 
-	if ep, err = utils2.ExpandPath(contractPath); err == nil {
-		contractBytes, err = utils2.ReadFile(ep)
-		if err != nil {
-			return err
-		}
-	} else {
-		return err
+	h := crypto.BLAKE2b_512.New()
+	_, err = h.Write([]byte(contract))
+	if err != nil {
+		return errors.WithMessage(err, "Failed to write contract to hash")
 	}
 
-	return signAndTransmit(key, idfBytes, contractBytes, wallet, serverAddress, serverCertPath)
+	return signAndTransmit(key, idfBytes, h.Sum(nil), nominatorWallet, validatorWallet, serverAddress, serverCert)
 }
 
 // SignAndTransmit creates a Client object & transmits commitment info to the server
-func signAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverAddress, serverCertPath string) error {
+func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, validatorWallet, serverAddress, serverCert string) error {
 	// Create new resty client
 	cl := resty.New()
-	cl.SetRootCertificate(serverCertPath) // Set commitments root certificate
+	cl.SetRootCertificateFromString(serverCert)
 	cl.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 	// Hash & sign node info
@@ -68,7 +66,7 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverAddress, 
 	if err != nil {
 		return errors.WithMessage(err, "Failed to load private key")
 	}
-	hashed, hash, err := utils.HashNodeInfo(wallet, idfBytes, contractBytes)
+	hashed, hash, err := utils.HashNodeInfo(nominatorWallet, validatorWallet, idfBytes, contractBytes)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to hash node info")
 	}
@@ -79,10 +77,11 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverAddress, 
 
 	// Build message body & post to server
 	body := messages.Commitment{
-		IDF:       base64.URLEncoding.EncodeToString(idfBytes),
-		Contract:  base64.URLEncoding.EncodeToString(contractBytes),
-		Wallet:    wallet,
-		Signature: base64.URLEncoding.EncodeToString(sig),
+		IDF:             base64.URLEncoding.EncodeToString(idfBytes),
+		Contract:        base64.URLEncoding.EncodeToString(contractBytes),
+		NominatorWallet: nominatorWallet,
+		ValidatorWallet: validatorWallet,
+		Signature:       base64.URLEncoding.EncodeToString(sig),
 	}
 	resp, err := cl.R().
 		SetHeader("Content-Type", "application/json").
@@ -92,6 +91,9 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, wallet, serverAddress, 
 
 	if err != nil {
 		return errors.WithMessagef(err, "Failed to register commitment, received response: %+v", resp)
+	} else if resp.IsError() {
+		return errors.Errorf("Failed to register commitment, received response: %+v", resp)
 	}
+
 	return nil
 }

@@ -1,11 +1,20 @@
 # MainNet commitments
 
+### Client usage
+```
+./client.binary -k ../wrapper/creds/1/cmix-key.key -i ../wrapper/creds/1/cmix-IDF.json -n "NOMINATOR WALLET" -v "VALIDATOR WALLET"
+```
+
 ### Build instructions
 The makefile contains three targets for default builds
 To build server binaries, use either of the following:
 
 `make linux_server`
 `make mac_server`
+
+To build the CLI binary use:
+`make cli_client_mac`
+`make cli_client_linux`
 
 To compile the webassembly bindings use:
 
