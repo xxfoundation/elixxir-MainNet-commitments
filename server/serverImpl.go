@@ -117,19 +117,22 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 	}
 
 	// Validate wallets
-	ok, err := wallet.ValidateXXNetworkAddress(msg.NominatorWallet)
-	if err != nil {
-		err = errors.WithMessage(err, "Failed to validate nominator wallet address")
-		jww.ERROR.Println(err)
-		return err
-	}
-	if !ok {
-		err = errors.New("Nominator wallet validation returned false")
-		jww.ERROR.Println(err)
-		return err
+	if msg.NominatorWallet != "" {
+		ok, err := wallet.ValidateXXNetworkAddress(msg.NominatorWallet)
+		if err != nil {
+			err = errors.WithMessage(err, "Failed to validate nominator wallet address")
+			jww.ERROR.Println(err)
+			return err
+		}
+		if !ok {
+			err = errors.New("Nominator wallet validation returned false")
+			jww.ERROR.Println(err)
+			return err
+		}
+
 	}
 
-	ok, err = wallet.ValidateXXNetworkAddress(msg.ValidatorWallet)
+	ok, err := wallet.ValidateXXNetworkAddress(msg.ValidatorWallet)
 	if err != nil {
 		err = errors.WithMessage(err, "Failed to validate validator wallet address")
 		jww.ERROR.Println(err)
