@@ -98,9 +98,6 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, valida
 	return nil
 }
 
-type InfoJSON struct {
-}
-
 func GetInfo(nid, serverCert, serverAddress string) ([]byte, error) {
 	cl := resty.New()
 	cl.SetRootCertificateFromString(serverCert)
