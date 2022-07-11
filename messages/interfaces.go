@@ -7,7 +7,6 @@ type Commitment struct {
 	ValidatorWallet    string  `json:"validator-wallet"`
 	NominatorWallet    string  `json:"nominator-wallet"`
 	SelectedMultiplier float32 `json:"selected-multiplier"`
-	MaxMultiplier      float32 `json:"max-multiplier"`
 	Email              string  `json:"email"`
 	Signature          string  `json:"signature"`
 }

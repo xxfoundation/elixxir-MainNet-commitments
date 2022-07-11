@@ -240,6 +240,12 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		Wallet:    msg.ValidatorWallet,
 		Signature: sigBytes,
 	}
+	if msg.SelectedMultiplier != 0 {
+		c.SelectedMultiplier = msg.SelectedMultiplier
+	}
+	if msg.Email != "" {
+		c.Email = msg.Email
+	}
 	if msg.NominatorWallet != "" {
 		c.NominatorWallet = msg.NominatorWallet
 	}
