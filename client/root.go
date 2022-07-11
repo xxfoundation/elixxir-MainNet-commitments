@@ -82,7 +82,7 @@ Mu7/deeXg4hfNzQoWdZnBhzgaB05MAbJI6E=
 			jww.FATAL.Fatalf("You must accept the contract to continue")
 		}
 
-		err = SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, address, commitmentCert, utils.Contract)
+		err = SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, address, commitmentCert, utils.Contract, "", 1)
 		if err != nil {
 			jww.FATAL.Fatalf("Failed to sign & transmit commitment: %+v", err)
 		}

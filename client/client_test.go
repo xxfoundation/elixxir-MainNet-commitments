@@ -28,11 +28,13 @@ import (
 )
 
 func TestSignAndTransmit(t *testing.T) {
-	pk, err := rsa.GenerateKey(csprng.NewSystemRNG(), 2048)
+	rng := csprng.NewSystemRNG()
+	rng.SetSeed([]byte("start"))
+	pk, err := rsa.GenerateKey(rng, 2048)
 	if err != nil {
 		t.Errorf("Failed to gen key: %+v", err)
 	}
-	nid := id.NewIdFromString("zezima", id.Node, t)
+	nid := id.NewIdFromString("zezimatwo", id.Node, t)
 	idb := [33]byte{}
 	copy(idb[:], nid.Marshal())
 	idFile := idf.IdFile{
@@ -75,7 +77,7 @@ func TestSignAndTransmit(t *testing.T) {
 		t.Error("Failed to init storage for mock server")
 	}
 	err = mapImpl.InsertMembers([]storage.Member{{
-		Id:   nid.Bytes(),
+		Id:   nid.Bytes()[:32],
 		Cert: certBytes,
 	},
 	})
@@ -102,7 +104,7 @@ func TestSignAndTransmit(t *testing.T) {
 	}()
 	time.Sleep(time.Millisecond * 100)
 
-	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, waddr2, "http://localhost:11420", "", "")
+	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, waddr2, "http://localhost:11420", "", "", "jonah@elixxir.io", 1.1)
 	if err != nil {
 		t.Errorf("Failed to sign & transmit: %+v", err)
 	}
