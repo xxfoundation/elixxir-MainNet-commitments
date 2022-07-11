@@ -25,3 +25,9 @@ func (db *DatabaseImpl) GetMember(id string) (*Member, error) {
 	m := Member{}
 	return &m, db.db.First(&m, "id = ?", id).Error
 }
+
+func (db *DatabaseImpl) GetCommitment(id string) (*Commitment, error) {
+	jww.INFO.Printf("Getting member with id %+v", id)
+	c := Commitment{}
+	return &c, db.db.First(&c, "id = ?", id).Error
+}

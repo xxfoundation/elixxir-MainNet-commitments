@@ -22,6 +22,7 @@ type database interface {
 	InsertCommitment(Commitment) error
 
 	GetMember(hexID string) (*Member, error)
+	GetCommitment(id string) (*Commitment, error)
 }
 
 // DatabaseImpl struct implements the Database Interface with an underlying DB
@@ -35,13 +36,15 @@ type Member struct {
 }
 
 type Commitment struct {
-	Id              []byte `gorm:"primary_key"`
-	Contract        []byte `gorm:"not null"`
-	Wallet          string `gorm:"not null"`
-	NominatorWallet string
-	Email           string
-	Signature       []byte `gorm:"not null"`
-	CreatedAt       time.Time
+	Id                 []byte `gorm:"primary_key"`
+	Contract           []byte `gorm:"not null"`
+	Wallet             string `gorm:"not null"`
+	NominatorWallet    string
+	Email              string
+	Signature          []byte `gorm:"not null"`
+	SelectedMultiplier float32
+	MaxMultiplier      float32 `gorm:"default:1.0"`
+	CreatedAt          time.Time
 }
 
 // newDatabase initializes the database interface with either Database or Map backend

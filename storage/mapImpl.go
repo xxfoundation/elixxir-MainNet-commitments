@@ -53,3 +53,20 @@ func (db *MapImpl) GetMember(id string) (*Member, error) {
 	}
 	return &m, nil
 }
+
+func (db *MapImpl) GetCommitment(id string) (*Commitment, error) {
+	db.RLock()
+	defer db.RUnlock()
+	var raw = make([]byte, 33)
+	_, err := hex.Decode(raw, []byte(id[2:]))
+	if err != nil {
+		return nil, err
+	}
+	raw[32] = byte(02)
+	modified := base64.StdEncoding.EncodeToString(raw)
+	c, ok := db.commitments[modified]
+	if !ok {
+		return nil, errors.Errorf("No commitment in MapImpl with id %+v", id)
+	}
+	return &c, nil
+}

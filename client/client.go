@@ -97,3 +97,21 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, valida
 
 	return nil
 }
+
+type InfoJSON struct {
+}
+
+func GetInfo(nid, serverCert, serverAddress string) ([]byte, error) {
+	cl := resty.New()
+	cl.SetRootCertificateFromString(serverCert)
+	cl.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+
+	resp, err := cl.R().SetQueryParam("id", nid).Get(serverAddress + "/info")
+	if err != nil {
+		return nil, errors.WithMessagef(err, "Failed to get commitment info, received response: %+v", resp)
+	} else if resp.IsError() {
+		return nil, errors.Errorf("Failed process request for commitment info, received response: %+v", resp)
+	}
+
+	return resp.Body(), nil
+}
