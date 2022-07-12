@@ -63,8 +63,7 @@ func (db *MapImpl) GetCommitment(id string) (*Commitment, error) {
 		return nil, err
 	}
 	raw[32] = byte(02)
-	modified := base64.StdEncoding.EncodeToString(raw)
-	c, ok := db.commitments[modified]
+	c, ok := db.commitments[string(raw)]
 	if !ok {
 		return nil, errors.Errorf("No commitment in MapImpl with id %+v", id)
 	}
