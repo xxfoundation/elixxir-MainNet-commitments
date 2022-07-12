@@ -85,8 +85,8 @@ func newDatabase(username, password, dbName, address,
 		defer jww.INFO.Println("Map backend initialized successfully!")
 
 		mapImpl := &MapImpl{
-			members:     map[string]Member{},
-			commitments: map[string]Commitment{},
+			members:     map[string]*Member{},
+			commitments: map[string]*Commitment{},
 		}
 
 		return database(mapImpl), nil
