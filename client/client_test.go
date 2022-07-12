@@ -140,10 +140,10 @@ func makeCert(pk *gorsa.PrivateKey) ([]byte, error) {
 	return pem.EncodeToMemory(block), nil
 }
 
-func TestGetInfo(t *testing.T) {
-	ret, err := GetInfo("\\x616263313233", "", "http://0.0.0.0:11420")
-	if err != nil {
-		t.Errorf("Failed to get info: %+v", err)
-	}
-	t.Log(string(ret))
-}
+//func TestGetInfo(t *testing.T) {
+//	ret, err := GetInfo("\\x616263313233", "", "http://0.0.0.0:11420")
+//	if err != nil {
+//		t.Errorf("Failed to get info: %+v", err)
+//	}
+//	t.Log(string(ret))
+//}
