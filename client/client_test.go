@@ -77,7 +77,7 @@ func TestSignAndTransmit(t *testing.T) {
 		t.Error("Failed to init storage for mock server")
 	}
 	err = mapImpl.InsertMembers([]storage.Member{{
-		Id:   nid.Bytes()[:32],
+		Id:   nid.Bytes(),
 		Cert: certBytes,
 	},
 	})
