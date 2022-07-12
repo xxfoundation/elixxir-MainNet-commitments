@@ -34,7 +34,7 @@ func TestSignAndTransmit(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to gen key: %+v", err)
 	}
-	nid := id.NewIdFromString("zezimatwo", id.Node, t)
+	nid := id.NewIdFromString("jonah", id.Node, t)
 	idb := [33]byte{}
 	copy(idb[:], nid.Marshal())
 	idFile := idf.IdFile{
@@ -104,7 +104,7 @@ func TestSignAndTransmit(t *testing.T) {
 	}()
 	time.Sleep(time.Millisecond * 100)
 
-	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, waddr2, "http://localhost:11420", "", "", "jonah@elixxir.io", 1.1)
+	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, waddr2, "http://localhost:11420", "", "", "", 0.0)
 	if err != nil {
 		t.Errorf("Failed to sign & transmit: %+v", err)
 	}

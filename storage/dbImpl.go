@@ -17,7 +17,7 @@ func (db *DatabaseImpl) InsertMembers(members []Member) error {
 }
 
 func (db *DatabaseImpl) InsertCommitment(commitment Commitment) error {
-	return db.db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoUpdates: clause.AssignmentColumns([]string{"wallet", "nominator_wallet", "email", "selected_multiplier"})}).Create(&commitment).Error
+	return db.db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoUpdates: clause.AssignmentColumns([]string{"wallet", "nominator_wallet", "email", "selected_stake"})}).Create(&commitment).Error
 }
 
 func (db *DatabaseImpl) GetMember(id string) (*Member, error) {

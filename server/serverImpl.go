@@ -93,10 +93,11 @@ func StartServer(params Params, s *storage.Storage) error {
 			return
 		}
 		c.JSON(http.StatusOK, messages.CommitmentInfo{
-			ValidatorWallet:    commitment.Wallet,
-			NominatorWallet:    commitment.NominatorWallet,
-			SelectedMultiplier: commitment.SelectedMultiplier,
-			MaxMultiplier:      commitment.MaxMultiplier,
+			ValidatorWallet: commitment.Wallet,
+			NominatorWallet: commitment.NominatorWallet,
+			SelectedStake:   commitment.SelectedStake,
+			MaxStake:        commitment.MaxStake,
+			Email:           commitment.Email,
 		})
 	})
 	impl.comms = r
@@ -240,8 +241,8 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		Wallet:    msg.ValidatorWallet,
 		Signature: sigBytes,
 	}
-	if msg.SelectedMultiplier != 0 {
-		c.SelectedMultiplier = msg.SelectedMultiplier
+	if msg.SelectedStake != 0 {
+		c.SelectedStake = msg.SelectedStake
 	}
 	if msg.Email != "" {
 		c.Email = msg.Email

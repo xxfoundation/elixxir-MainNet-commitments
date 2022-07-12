@@ -20,7 +20,7 @@ import (
 	utils2 "gitlab.com/xx_network/primitives/utils"
 )
 
-func SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, serverAddress, serverCert, contract, email string, selectedMultiplier float32) error {
+func SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, serverAddress, serverCert, contract, email string, selectedStake int) error {
 	var key, idfBytes []byte
 	var err error
 	var ep string
@@ -51,11 +51,11 @@ func SignAndTransmit(keyPath, idfPath, nominatorWallet, validatorWallet, serverA
 		return errors.WithMessage(err, "Failed to write contract to hash")
 	}
 
-	return signAndTransmit(key, idfBytes, h.Sum(nil), nominatorWallet, validatorWallet, serverAddress, serverCert, email, selectedMultiplier)
+	return signAndTransmit(key, idfBytes, h.Sum(nil), nominatorWallet, validatorWallet, serverAddress, serverCert, email, selectedStake)
 }
 
 // SignAndTransmit creates a Client object & transmits commitment info to the server
-func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, validatorWallet, serverAddress, serverCert, email string, selectedMultiplier float32) error {
+func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, validatorWallet, serverAddress, serverCert, email string, selectedStake int) error {
 	// Create new resty client
 	cl := resty.New()
 	cl.SetRootCertificateFromString(serverCert)
@@ -77,13 +77,13 @@ func signAndTransmit(pk, idfBytes, contractBytes []byte, nominatorWallet, valida
 
 	// Build message body & post to server
 	body := messages.Commitment{
-		IDF:                base64.URLEncoding.EncodeToString(idfBytes),
-		Contract:           base64.URLEncoding.EncodeToString(contractBytes),
-		NominatorWallet:    nominatorWallet,
-		ValidatorWallet:    validatorWallet,
-		Signature:          base64.URLEncoding.EncodeToString(sig),
-		Email:              email,
-		SelectedMultiplier: selectedMultiplier,
+		IDF:             base64.URLEncoding.EncodeToString(idfBytes),
+		Contract:        base64.URLEncoding.EncodeToString(contractBytes),
+		NominatorWallet: nominatorWallet,
+		ValidatorWallet: validatorWallet,
+		Signature:       base64.URLEncoding.EncodeToString(sig),
+		Email:           email,
+		SelectedStake:   selectedStake,
 	}
 	resp, err := cl.R().
 		SetHeader("Content-Type", "application/json").
