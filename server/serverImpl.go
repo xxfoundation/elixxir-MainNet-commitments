@@ -85,7 +85,8 @@ func StartServer(params Params, s *storage.Storage) error {
 			c.JSON(http.StatusBadRequest, wrappedErr.JSON())
 			return
 		}
-		commitment, err := impl.s.GetCommitment(nid)
+		convertedID := "\\" + nid[1:]
+		commitment, err := impl.s.GetCommitment(convertedID)
 		if err != nil {
 			jww.ERROR.Printf("Failed to get commitment for nid %s: %+v", nid, err)
 			wrappedErr := c.Error(err)
