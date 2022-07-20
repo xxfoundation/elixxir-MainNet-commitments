@@ -93,10 +93,16 @@ func StartServer(params Params, s *storage.Storage) error {
 			c.JSON(http.StatusBadRequest, wrappedErr.JSON())
 			return
 		}
+		var selectedStake int
+		if commitment.SelectedStake == nil {
+			selectedStake = -1
+		} else {
+			selectedStake = *commitment.SelectedStake
+		}
 		c.JSON(http.StatusOK, messages.CommitmentInfo{
 			ValidatorWallet: commitment.Wallet,
 			NominatorWallet: commitment.NominatorWallet,
-			SelectedStake:   commitment.SelectedStake,
+			SelectedStake:   selectedStake,
 			MaxStake:        commitment.MaxStake,
 			Email:           commitment.Email,
 		})
@@ -242,8 +248,8 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		Wallet:    msg.ValidatorWallet,
 		Signature: sigBytes,
 	}
-	if msg.SelectedStake != 0 {
-		c.SelectedStake = msg.SelectedStake
+	if msg.SelectedStake >= 0 {
+		c.SelectedStake = &msg.SelectedStake
 	}
 	if msg.Email != "" {
 		c.Email = msg.Email
