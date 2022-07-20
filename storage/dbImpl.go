@@ -17,11 +17,17 @@ func (db *DatabaseImpl) InsertMembers(members []Member) error {
 }
 
 func (db *DatabaseImpl) InsertCommitment(commitment Commitment) error {
-	return db.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&commitment).Error
+	return db.db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoUpdates: clause.AssignmentColumns([]string{"wallet", "nominator_wallet", "email", "selected_stake"})}).Create(&commitment).Error
 }
 
 func (db *DatabaseImpl) GetMember(id string) (*Member, error) {
 	jww.INFO.Printf("Getting member with id %+v", id)
 	m := Member{}
 	return &m, db.db.First(&m, "id = ?", id).Error
+}
+
+func (db *DatabaseImpl) GetCommitment(id string) (*Commitment, error) {
+	jww.INFO.Printf("Getting member with id %+v", id)
+	c := Commitment{}
+	return &c, db.db.First(&c, "id = ?", id).Error
 }

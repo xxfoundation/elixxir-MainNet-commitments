@@ -22,6 +22,7 @@ type database interface {
 	InsertCommitment(Commitment) error
 
 	GetMember(hexID string) (*Member, error)
+	GetCommitment(id string) (*Commitment, error)
 }
 
 // DatabaseImpl struct implements the Database Interface with an underlying DB
@@ -41,6 +42,8 @@ type Commitment struct {
 	NominatorWallet string
 	Email           string
 	Signature       []byte `gorm:"not null"`
+	SelectedStake   int
+	MaxStake        int `gorm:"default:137068"`
 	CreatedAt       time.Time
 }
 
@@ -82,8 +85,8 @@ func newDatabase(username, password, dbName, address,
 		defer jww.INFO.Println("Map backend initialized successfully!")
 
 		mapImpl := &MapImpl{
-			members:     map[string]Member{},
-			commitments: map[string]Commitment{},
+			members:     map[string]*Member{},
+			commitments: map[string]*Commitment{},
 		}
 
 		return database(mapImpl), nil

@@ -28,11 +28,13 @@ import (
 )
 
 func TestSignAndTransmit(t *testing.T) {
-	pk, err := rsa.GenerateKey(csprng.NewSystemRNG(), 2048)
+	rng := csprng.NewSystemRNG()
+	rng.SetSeed([]byte("start"))
+	pk, err := rsa.GenerateKey(rng, 2048)
 	if err != nil {
 		t.Errorf("Failed to gen key: %+v", err)
 	}
-	nid := id.NewIdFromString("zezima", id.Node, t)
+	nid := id.NewIdFromString("jonah", id.Node, t)
 	idb := [33]byte{}
 	copy(idb[:], nid.Marshal())
 	idFile := idf.IdFile{
@@ -102,7 +104,7 @@ func TestSignAndTransmit(t *testing.T) {
 	}()
 	time.Sleep(time.Millisecond * 100)
 
-	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, waddr2, "http://localhost:11420", "", "")
+	err = SignAndTransmit(testKeyPath, testIDFPath, waddr, waddr2, "http://localhost:11420", "", "", "", 0.0)
 	if err != nil {
 		t.Errorf("Failed to sign & transmit: %+v", err)
 	}
@@ -137,3 +139,11 @@ func makeCert(pk *gorsa.PrivateKey) ([]byte, error) {
 	}
 	return pem.EncodeToMemory(block), nil
 }
+
+//func TestGetInfo(t *testing.T) {
+//	ret, err := GetInfo("\\x616263313233", "", "http://0.0.0.0:11420")
+//	if err != nil {
+//		t.Errorf("Failed to get info: %+v", err)
+//	}
+//	t.Log(string(ret))
+//}

@@ -75,6 +75,32 @@ func StartServer(params Params, s *storage.Storage) error {
 		}
 		c.JSON(http.StatusAccepted, newCommitment)
 	})
+	r.GET("/info", func(c *gin.Context) {
+		jww.DEBUG.Printf("Received info request %+v...", c.Request)
+		fmt.Println(c.Request.URL.Query())
+		nid := c.Request.URL.Query().Get("id")
+		if nid == "" {
+			jww.ERROR.Printf("No ID in received request")
+			wrappedErr := c.Error(errors.New("No ID in received request"))
+			c.JSON(http.StatusBadRequest, wrappedErr.JSON())
+			return
+		}
+		convertedID := "\\" + nid[1:]
+		commitment, err := impl.s.GetCommitment(convertedID)
+		if err != nil {
+			jww.ERROR.Printf("Failed to get commitment for nid %s: %+v", nid, err)
+			wrappedErr := c.Error(err)
+			c.JSON(http.StatusBadRequest, wrappedErr.JSON())
+			return
+		}
+		c.JSON(http.StatusOK, messages.CommitmentInfo{
+			ValidatorWallet: commitment.Wallet,
+			NominatorWallet: commitment.NominatorWallet,
+			SelectedStake:   commitment.SelectedStake,
+			MaxStake:        commitment.MaxStake,
+			Email:           commitment.Email,
+		})
+	})
 	impl.comms = r
 	// Run with TLS
 	if params.KeyPath == "" && params.CertPath == "" {
@@ -215,6 +241,12 @@ func (i *Impl) Verify(_ context.Context, msg messages.Commitment) error {
 		Contract:  contractBytes,
 		Wallet:    msg.ValidatorWallet,
 		Signature: sigBytes,
+	}
+	if msg.SelectedStake != 0 {
+		c.SelectedStake = msg.SelectedStake
+	}
+	if msg.Email != "" {
+		c.Email = msg.Email
 	}
 	if msg.NominatorWallet != "" {
 		c.NominatorWallet = msg.NominatorWallet
