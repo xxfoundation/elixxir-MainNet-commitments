@@ -26,6 +26,7 @@ import (
 	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/id/idf"
+	"gorm.io/gorm"
 	"net/http"
 	"testing"
 	"time"
@@ -88,6 +89,15 @@ func StartServer(params Params, s *storage.Storage) error {
 		convertedID := "\\" + nid[1:]
 		commitment, err := impl.s.GetCommitment(convertedID)
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(http.StatusOK, messages.CommitmentInfo{
+					ValidatorWallet: "",
+					NominatorWallet: "",
+					SelectedStake:   -2,
+					MaxStake:        137068,
+					Email:           "",
+				})
+			}
 			jww.ERROR.Printf("Failed to get commitment for nid %s: %+v", nid, err)
 			wrappedErr := c.Error(err)
 			c.JSON(http.StatusBadRequest, wrappedErr.JSON())

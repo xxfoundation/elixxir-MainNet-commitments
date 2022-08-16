@@ -42,8 +42,8 @@ type Commitment struct {
 	NominatorWallet string
 	Email           string
 	Signature       []byte `gorm:"not null"`
-	SelectedStake   int
-	MaxStake        int `gorm:"default:137068"`
+	SelectedStake   int    `gorm:"default:-2"`
+	MaxStake        int    `gorm:"default:137068"`
 	CreatedAt       time.Time
 }
 
