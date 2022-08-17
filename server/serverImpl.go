@@ -106,6 +106,7 @@ func StartServer(params Params, s *storage.Storage) error {
 					MaxStake:        defaultMaxStake,
 					Email:           "",
 				})
+				return
 			}
 			jww.ERROR.Printf("Failed to get commitment for nid %s: %+v", nid, err)
 			wrappedErr := c.Error(err)
