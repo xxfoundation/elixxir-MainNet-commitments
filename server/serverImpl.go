@@ -32,6 +32,15 @@ import (
 	"time"
 )
 
+const (
+	// These values are the default values for these colums in the database
+	// They are also set in the tags in the db table definition, and must match
+	// those values.  Max stake was set when table was added, -2 value on
+	// default stake indicates an auto calculated stake
+	defaultMaxStake = 137068
+	defaultStake    = -2
+)
+
 // Params struct holds data needed to create a server Impl
 type Params struct {
 	KeyPath      string
@@ -93,8 +102,8 @@ func StartServer(params Params, s *storage.Storage) error {
 				c.JSON(http.StatusOK, messages.CommitmentInfo{
 					ValidatorWallet: "",
 					NominatorWallet: "",
-					SelectedStake:   -2,
-					MaxStake:        137068,
+					SelectedStake:   defaultStake,
+					MaxStake:        defaultMaxStake,
 					Email:           "",
 				})
 			}
