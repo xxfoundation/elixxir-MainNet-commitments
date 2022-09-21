@@ -3,7 +3,7 @@
 variables:
   REPO_DIR: gitlab.com/elixxir
   REPO_NAME: mainnet-commitments
-  DOCKER_IMAGE: elixxirlabs/cuda-go:go1.16-cuda11.1
+  DOCKER_IMAGE: backend-ci:go1.16-cuda11.1.1
   MIN_CODE_COVERAGE: "0.0"
 
 before_script:
