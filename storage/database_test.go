@@ -35,13 +35,15 @@ func TestDatabase(t *testing.T) {
 		t.Fatalf("Failed to setup storage: %+v", err)
 	}
 	id1 := id.NewIdFromString("zezimaone", id.Node, t)
+	memCert1 := []byte("cert1")
+	memCert2 := []byte("cert2")
 	m1 := Member{
 		Id:   id1.Bytes(),
-		Cert: []byte("cert1"),
+		Cert: memCert1,
 	}
 	m2 := Member{
 		Id:   id.NewIdFromString("zezimatwo", id.Node, t).Bytes(),
-		Cert: []byte("cert2"),
+		Cert: memCert2,
 	}
 	err = s.InsertMembers([]Member{m1, m2})
 	if err != nil {
@@ -51,7 +53,7 @@ func TestDatabase(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get member: %+v", err)
 	}
-	if bytes.Compare(rm.Cert, []byte("cert1")) != 0 {
+	if bytes.Compare(rm.Cert, memCert1) != 0 {
 		t.Errorf("Members didn't match")
 	}
 	err = s.InsertCommitment(Commitment{
