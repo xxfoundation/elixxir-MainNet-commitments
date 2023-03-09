@@ -25,7 +25,10 @@ func (db *MapImpl) InsertMembers(members []Member) error {
 	db.Lock()
 	defer db.Unlock()
 	for _, m := range members {
-		db.members[base64.StdEncoding.EncodeToString(m.Id)] = &m
+		db.members[base64.StdEncoding.EncodeToString(m.Id)] = &Member{
+			Id:   m.Id,
+			Cert: m.Cert,
+		}
 	}
 	return nil
 }
